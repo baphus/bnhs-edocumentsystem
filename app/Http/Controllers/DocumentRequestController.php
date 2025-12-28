@@ -9,6 +9,7 @@ use App\Models\Otp;
 use App\Services\OtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -212,15 +213,22 @@ class DocumentRequestController extends Controller
             Mail::to($validated['email'])->send(new RequestSubmittedMail($documentRequest));
         } catch (\Exception $e) {
             // Log error but don't fail the request submission
-            \Log::error('Failed to send request submission email: ' . $e->getMessage());
+            Log::error('Failed to send request submission email: ' . $e->getMessage());
         }
 
-        // Clear session
+        // Since email was already verified in the request flow, automatically set dashboard verification
+        // This avoids redundant email verification
+        session([
+            'dashboard_verified_email' => $validated['email'],
+            'dashboard_verified_at' => now()->toISOString(),
+        ]);
+
+        // Clear request session
         session()->forget(['verified_email', 'verified_at', 'document_type_id']);
 
-        // Redirect to user dashboard verification page
-        return redirect()->route('user.dashboard.verify')
-            ->with('success', 'Request submitted successfully! Please verify your email to access your dashboard.');
+        // Redirect directly to dashboard (no need to verify email again)
+        return redirect()->route('user.dashboard.index')
+            ->with('success', 'Request submitted successfully! You can now view your request in the dashboard.');
     }
 
     /**
