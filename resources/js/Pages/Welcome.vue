@@ -37,7 +37,7 @@ defineProps<{
                             :href="route('login')"
                             class="text-sm font-medium text-gray-600 hover:text-bnhs-blue"
                         >
-                            Admin Login
+                            Login
                         </Link>
                     </div>
                 </div>

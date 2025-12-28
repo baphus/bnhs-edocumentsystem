@@ -3,22 +3,101 @@
 namespace App\Http\Controllers;
 
 use App\Models\DocumentRequest;
+use App\Services\OtpService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class UserDashboardController extends Controller
 {
+    protected OtpService $otpService;
+
+    public function __construct(OtpService $otpService)
+    {
+        $this->otpService = $otpService;
+    }
+
     /**
-     * Display user dashboard (passwordless - requires email verification).
+     * Show email verification page for dashboard access.
      */
-    public function index(Request $request): Response
+    public function showEmailVerification(): Response
+    {
+        return Inertia::render('User/EmailVerification');
+    }
+
+    /**
+     * Send OTP to email for dashboard access.
+     */
+    public function sendOtp(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
         ]);
 
-        $email = $request->email;
+        // Verify that the email has at least one request
+        $hasRequests = DocumentRequest::where('email', $request->email)->exists();
+
+        if (!$hasRequests) {
+            return back()->withErrors([
+                'email' => 'No requests found for this email address.',
+            ]);
+        }
+
+        $result = $this->otpService->sendOtp($request->email, 'dashboard');
+
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        }
+
+        return back()->withErrors(['email' => $result['message']]);
+    }
+
+    /**
+     * Verify OTP and grant dashboard access.
+     */
+    public function verifyOtp(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        $result = $this->otpService->verifyOtp($request->email, $request->otp, 'dashboard');
+
+        if ($result['success']) {
+            // Store verified email in session
+            session([
+                'dashboard_verified_email' => $request->email,
+                'dashboard_verified_at' => now()->toISOString(),
+            ]);
+
+            return redirect()->route('user.dashboard.index');
+        }
+
+        return back()->withErrors(['otp' => $result['message']]);
+    }
+
+    /**
+     * Display user dashboard (passwordless - requires email verification).
+     */
+    public function index(Request $request): Response|RedirectResponse
+    {
+        // Check if email is verified in session
+        if (!session('dashboard_verified_email') || !session('dashboard_verified_at')) {
+            return redirect()->route('user.dashboard.verify')
+                ->withErrors(['error' => 'Please verify your email first.']);
+        }
+
+        // Check if verification is still valid (30 minutes)
+        $verifiedAt = \Carbon\Carbon::parse(session('dashboard_verified_at'));
+        if ($verifiedAt->diffInMinutes(now()) > 30) {
+            session()->forget(['dashboard_verified_email', 'dashboard_verified_at']);
+            return redirect()->route('user.dashboard.verify')
+                ->withErrors(['error' => 'Session expired. Please verify your email again.']);
+        }
+
+        $email = session('dashboard_verified_email');
 
         // Get all requests for this email, ordered by latest first
         $requests = DocumentRequest::with('documentType')

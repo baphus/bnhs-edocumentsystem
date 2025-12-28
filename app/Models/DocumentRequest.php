@@ -68,23 +68,32 @@ class DocumentRequest extends Model
     }
 
     /**
-     * Generate a unique tracking ID in format: BNHS-YYYY-XXXX
+     * Generate a unique tracking ID in format: BNHS-XXXXXXXX (8 random alphanumeric characters)
+     * This format is not easily guessable compared to sequential numbers.
      */
     public static function generateTrackingId(): string
     {
-        $year = now()->year;
-        
-        $lastRequest = static::whereYear('created_at', $year)
-            ->orderBy('id', 'desc')
-            ->first();
+        $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded confusing chars: 0, O, I, 1
+        $maxAttempts = 100;
+        $attempt = 0;
 
-        if ($lastRequest && preg_match('/BNHS-\d{4}-(\d{4})/', $lastRequest->tracking_id, $matches)) {
-            $sequence = intval($matches[1]) + 1;
-        } else {
-            $sequence = 1;
-        }
+        do {
+            $code = 'BNHS-';
+            for ($i = 0; $i < 8; $i++) {
+                $code .= $characters[random_int(0, strlen($characters) - 1)];
+            }
 
-        return sprintf('BNHS-%d-%04d', $year, $sequence);
+            // Check if this tracking ID already exists
+            $exists = static::where('tracking_id', $code)->exists();
+            $attempt++;
+
+            if (!$exists) {
+                return $code;
+            }
+        } while ($attempt < $maxAttempts);
+
+        // Fallback: if we can't generate a unique one after max attempts, append a timestamp
+        return $code . '-' . substr(str_replace(['-', ':'], '', now()->toDateTimeString()), -6);
     }
 
     /**

@@ -32,9 +32,10 @@ class AdminDashboardController extends Controller
             ->map(fn($req) => [
                 'id' => $req->id,
                 'tracking_id' => $req->tracking_id,
-                'full_name' => $req->full_name,
+                'first_name' => $req->first_name,
+                'last_name' => $req->last_name,
                 'email' => $req->email,
-                'document_type' => $req->documentType->name,
+                'document_type' => $req->documentType ? ['name' => $req->documentType->name] : null,
                 'status' => $req->status,
                 'created_at' => $req->created_at,
             ]);

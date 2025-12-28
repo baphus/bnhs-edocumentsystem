@@ -38,8 +38,9 @@ class UserManagementController extends Controller
      */
     public function create(): Response
     {
+        // Superadmins can only be created through seeding, not through the UI
         return Inertia::render('Admin/Users/Create', [
-            'roles' => ['superadmin', 'registrar'],
+            'roles' => ['registrar'],
         ]);
     }
 
@@ -48,11 +49,12 @@ class UserManagementController extends Controller
      */
     public function store(Request $request)
     {
+        // Superadmins can only be created through seeding, not through the UI
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', Rule::in(['superadmin', 'registrar'])],
+            'role' => ['required', Rule::in(['registrar'])],
         ]);
 
         User::create([
@@ -71,6 +73,12 @@ class UserManagementController extends Controller
      */
     public function edit(User $user): Response
     {
+        // Prevent editing superadmin users - they should only be managed through seeding
+        if ($user->isSuperadmin()) {
+            abort(403, 'Superadmin users cannot be edited through the UI.');
+        }
+
+        // Superadmins can only be created through seeding, not through the UI
         return Inertia::render('Admin/Users/Edit', [
             'user' => [
                 'id' => $user->id,
@@ -78,7 +86,7 @@ class UserManagementController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
             ],
-            'roles' => ['superadmin', 'registrar'],
+            'roles' => ['registrar'],
         ]);
     }
 
@@ -87,11 +95,17 @@ class UserManagementController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        // Prevent editing superadmin users - they should only be managed through seeding
+        if ($user->isSuperadmin()) {
+            return back()->withErrors(['role' => 'Superadmin users cannot be edited through the UI.']);
+        }
+
+        // Superadmins can only be created through seeding, not through the UI
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => ['nullable', 'confirmed', Password::defaults()],
-            'role' => ['required', Rule::in(['superadmin', 'registrar'])],
+            'role' => ['required', Rule::in(['registrar'])],
         ]);
 
         $user->update([
@@ -116,6 +130,11 @@ class UserManagementController extends Controller
         // Prevent self-deletion
         if ($user->id === $request->user()->id) {
             return back()->withErrors(['error' => 'You cannot delete your own account.']);
+        }
+
+        // Prevent deletion of superadmin users - they should only be managed through seeding
+        if ($user->isSuperadmin()) {
+            return back()->withErrors(['error' => 'Superadmin users cannot be deleted through the UI.']);
         }
 
         $user->delete();

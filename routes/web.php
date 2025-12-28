@@ -80,7 +80,20 @@ Route::prefix('track')->name('track.')->group(function () {
 || User Dashboard Routes (Passwordless - Email-based)
 ||--------------------------------------------------------------------------
 */
-Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
+// Redirect /my-requests to verification page - no direct URL access
+Route::get('/my-requests', function () {
+    return redirect()->route('user.dashboard.verify');
+})->name('user.dashboard');
+
+Route::prefix('my-requests')->group(function () {
+    // Email verification (entry point)
+    Route::get('/verify', [UserDashboardController::class, 'showEmailVerification'])->name('user.dashboard.verify');
+    Route::post('/send-otp', [UserDashboardController::class, 'sendOtp'])->name('user.dashboard.send-otp');
+    Route::post('/verify-otp', [UserDashboardController::class, 'verifyOtp'])->name('user.dashboard.verify-otp');
+    
+    // Dashboard (only accessible after OTP verification via session)
+    Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard.index');
+});
 
 /*
 |--------------------------------------------------------------------------

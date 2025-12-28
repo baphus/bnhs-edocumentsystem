@@ -36,10 +36,10 @@ class RequestSubmittedMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.request-submitted',
+            view: 'emails.request-submitted',
             with: [
                 'request' => $this->documentRequest,
-                'dashboardUrl' => route('user.dashboard', ['email' => $this->documentRequest->email]),
+                'dashboardUrl' => route('user.dashboard.verify'),
             ],
         );
     }

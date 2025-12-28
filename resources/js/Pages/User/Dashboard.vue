@@ -132,7 +132,7 @@ const sidebarOpen = ref(false);
                     <!-- Navigation -->
                     <nav class="flex-1 space-y-1 p-4">
                         <Link
-                            :href="route('user.dashboard', { email: email })"
+                            :href="route('user.dashboard.index')"
                             class="flex items-center gap-3 rounded-lg bg-bnhs-blue-50 px-4 py-3 text-sm font-medium text-bnhs-blue transition hover:bg-bnhs-blue-100"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

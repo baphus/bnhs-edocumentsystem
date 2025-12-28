@@ -326,7 +326,7 @@ const submitRequest = () => {
 
                     <!-- 2x2 Photo -->
                     <div>
-                        <h2 class="mb-4 text-lg font-semibold text-gray-900">2x2 Photo</h2>
+                        <h2 class="mb-4 text-lg font-semibold text-gray-900">2x2 Photo <span class="text-sm font-normal text-gray-500">(Optional)</span></h2>
                         <div class="rounded-lg border-2 border-dashed border-gray-300 p-6">
                             <div v-if="!photoPreview" class="text-center">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

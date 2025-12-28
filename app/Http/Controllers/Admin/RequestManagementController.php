@@ -39,8 +39,8 @@ class RequestManagementController extends Controller
         }
 
         // Filter by document type
-        if ($request->document_type) {
-            $query->where('document_type_id', $request->document_type);
+        if ($request->document_type_id) {
+            $query->where('document_type_id', $request->document_type_id);
         }
 
         // Filter by date range
@@ -56,12 +56,14 @@ class RequestManagementController extends Controller
             ->through(fn($req) => [
                 'id' => $req->id,
                 'tracking_id' => $req->tracking_id,
-                'full_name' => $req->full_name,
-                'email' => $req->email,
+                'first_name' => $req->first_name,
+                'middle_name' => $req->middle_name,
+                'last_name' => $req->last_name,
+                'student_email' => $req->email,
                 'lrn' => $req->lrn,
                 'grade_level' => $req->grade_level,
-                'document_type' => $req->documentType->name,
-                'document_category' => $req->documentType->category,
+                'document_type' => $req->documentType ? ['name' => $req->documentType->name] : null,
+                'document_category' => $req->documentType->category ?? null,
                 'status' => $req->status,
                 'created_at' => $req->created_at,
                 'updated_at' => $req->updated_at,
@@ -75,7 +77,7 @@ class RequestManagementController extends Controller
             'requests' => $requests,
             'documentTypes' => $documentTypes,
             'statuses' => $statuses,
-            'filters' => $request->only(['search', 'status', 'document_type', 'from_date', 'to_date']),
+            'filters' => $request->only(['search', 'status', 'document_type_id', 'from_date', 'to_date']),
             'gradeLevels' => $this->getGradeLevels(),
             'trackStrands' => $this->getTrackStrands(),
             'schoolYears' => $this->getSchoolYears(),

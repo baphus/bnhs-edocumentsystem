@@ -7,6 +7,7 @@ use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\Otp;
 use App\Services\OtpService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -100,7 +101,7 @@ class DocumentRequestController extends Controller
     /**
      * Step 3: Show request form (only if OTP verified).
      */
-    public function showForm(Request $request): Response
+    public function showForm(Request $request): Response|RedirectResponse
     {
         // Check if email is verified
         if (!session('verified_email') || !session('verified_at')) {
@@ -156,7 +157,7 @@ class DocumentRequestController extends Controller
             'school_year_last_attended' => 'required|string|max:20',
             'purpose' => 'required|string|max:1000',
             'quantity' => 'nullable|integer|min:1|max:10',
-            'photo' => 'required|image|mimes:jpeg,jpg,png|max:2048|dimensions:min_width=200,min_height=200',
+            'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048|dimensions:min_width=200,min_height=200',
             'document_type_id' => 'required|exists:document_types,id',
         ], [
             'lrn.regex' => 'LRN must be exactly 12 digits.',
@@ -217,9 +218,9 @@ class DocumentRequestController extends Controller
         // Clear session
         session()->forget(['verified_email', 'verified_at', 'document_type_id']);
 
-        // Redirect to user dashboard instead of success page
-        return redirect()->route('user.dashboard', ['email' => $validated['email']])
-            ->with('success', 'Request submitted successfully!');
+        // Redirect to user dashboard verification page
+        return redirect()->route('user.dashboard.verify')
+            ->with('success', 'Request submitted successfully! Please verify your email to access your dashboard.');
     }
 
     /**

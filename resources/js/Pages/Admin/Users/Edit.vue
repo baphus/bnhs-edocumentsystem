@@ -2,10 +2,24 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { User } from '@/types';
+import { computed } from 'vue';
 
 const props = defineProps<{
     user: User;
+    roles: string[];
 }>();
+
+const roleLabels: Record<string, string> = {
+    superadmin: 'Super Admin',
+    registrar: 'Registrar',
+};
+
+const rolesWithLabels = computed(() => {
+    return props.roles.map(role => ({
+        value: role,
+        label: roleLabels[role] || role,
+    }));
+});
 
 const form = useForm({
     name: props.user.name,
@@ -14,11 +28,6 @@ const form = useForm({
     password_confirmation: '',
     role: props.user.role,
 });
-
-const roles = [
-    { value: 'superadmin', label: 'Super Admin' },
-    { value: 'registrar', label: 'Registrar' },
-];
 
 const submit = () => {
     form.patch(route('admin.users.update', props.user.id));
@@ -78,7 +87,7 @@ const submit = () => {
                                 required
                                 class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
                             >
-                                <option v-for="role in roles" :key="role.value" :value="role.value">
+                                <option v-for="role in rolesWithLabels" :key="role.value" :value="role.value">
                                     {{ role.label }}
                                 </option>
                             </select>

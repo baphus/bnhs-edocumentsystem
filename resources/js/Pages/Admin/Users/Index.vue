@@ -112,7 +112,7 @@ const formatDate = (date: string) => {
                                     {{ formatDate(user.created_at) }}
                                 </td>
                                 <td v-if="canManageUsers" class="whitespace-nowrap px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-3">
+                                    <div v-if="user.role !== 'superadmin'" class="flex items-center justify-end gap-3">
                                         <Link
                                             :href="route('admin.users.edit', user.id)"
                                             class="text-bnhs-blue hover:underline"
@@ -126,6 +126,7 @@ const formatDate = (date: string) => {
                                             Delete
                                         </button>
                                     </div>
+                                    <span v-else class="text-sm text-gray-400">System managed</span>
                                 </td>
                             </tr>
                             <tr v-if="users.data.length === 0">

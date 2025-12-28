@@ -37,11 +37,11 @@ class RequestStatusUpdatedMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.request-status-updated',
+            view: 'emails.request-status-updated',
             with: [
                 'request' => $this->documentRequest,
                 'oldStatus' => $this->oldStatus,
-                'dashboardUrl' => route('user.dashboard', ['email' => $this->documentRequest->email]),
+                'dashboardUrl' => route('user.dashboard.verify'),
             ],
         );
     }
