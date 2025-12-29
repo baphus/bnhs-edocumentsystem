@@ -201,7 +201,7 @@ class DocumentRequest extends Model
             'action' => 'status_change',
             'old_value' => $oldStatus,
             'new_value' => $newStatus,
-            'description' => $notes,
+            'description' => $notes ?: "Status changed from {$oldStatus} to {$newStatus}",
         ]);
 
         return true;

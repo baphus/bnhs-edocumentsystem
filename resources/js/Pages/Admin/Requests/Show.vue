@@ -60,6 +60,19 @@ const formatDate = (date: string) => {
         minute: '2-digit',
     });
 };
+
+const formatAction = (action: string) => {
+    const actionMap: Record<string, string> = {
+        'status_change': 'Status Updated',
+        'note_updated': 'Notes Updated',
+        'request_created': 'Request Created',
+    };
+    // Fallback: convert snake_case to Title Case
+    return actionMap[action] || action
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+};
 </script>
 
 <template>
@@ -239,9 +252,14 @@ const formatDate = (date: string) => {
                             :key="log.id"
                             class="flex items-start gap-4 border-l-2 border-gray-200 pl-4"
                         >
-                            <div>
-                                <p class="font-medium text-gray-900">{{ log.action }}</p>
-                                <p v-if="log.description" class="text-sm text-gray-600">{{ log.description }}</p>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <p class="font-medium text-gray-900">{{ formatAction(log.action) }}</p>
+                                    <span v-if="log.old_value && log.new_value && log.action === 'status_change'" class="text-xs text-gray-500">
+                                        ({{ log.old_value }} → {{ log.new_value }})
+                                    </span>
+                                </div>
+                                <p v-if="log.description" class="mt-1 text-sm text-gray-600">{{ log.description }}</p>
                                 <p class="mt-1 text-xs text-gray-400">
                                     {{ formatDate(log.created_at) }}
                                     <span v-if="log.user"> · by {{ log.user.name }}</span>

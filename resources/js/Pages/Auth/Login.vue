@@ -29,10 +29,10 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Admin Login" />
+        <Head title="Login" />
 
         <div class="mb-6 text-center">
-            <h2 class="text-xl font-semibold text-gray-900">Admin Login</h2>
+            <h2 class="text-xl font-semibold text-gray-900">Login</h2>
             <p class="mt-1 text-sm text-gray-500">Sign in to manage document requests</p>
         </div>
 

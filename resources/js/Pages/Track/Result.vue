@@ -70,6 +70,19 @@ const formatDateShort = (date: string) => {
         year: 'numeric',
     });
 };
+
+const formatAction = (action: string) => {
+    const actionMap: Record<string, string> = {
+        'status_change': 'Status Updated',
+        'note_updated': 'Notes Updated',
+        'request_created': 'Request Created',
+    };
+    // Fallback: convert snake_case to Title Case
+    return actionMap[action] || action
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+};
 </script>
 
 <template>
@@ -266,7 +279,7 @@ const formatDateShort = (date: string) => {
                                     <span v-else-if="log.action === 'status_change'">
                                         Status set to <span class="font-semibold">{{ log.new_value }}</span>
                                     </span>
-                                    <span v-else>{{ log.action }}</span>
+                                    <span v-else>{{ formatAction(log.action) }}</span>
                                 </p>
                                 <span class="text-sm text-gray-500">{{ formatDate(log.created_at) }}</span>
                             </div>

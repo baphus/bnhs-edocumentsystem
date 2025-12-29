@@ -59,7 +59,58 @@ class TrackingController extends Controller
     }
 
     /**
+     * Track request directly with email and tracking ID (no OTP required).
+     * Email was already verified when the request was created.
+     */
+    public function track(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'tracking_id' => 'required|string',
+        ]);
+
+        // Get the request and verify email matches
+        $documentRequest = DocumentRequest::with(['documentType', 'logs.user'])
+            ->where('email', $request->email)
+            ->where('tracking_id', strtoupper($request->tracking_id))
+            ->first();
+
+        if (!$documentRequest) {
+            return back()->withErrors([
+                'tracking_id' => 'No request found with this email and tracking ID combination.',
+            ]);
+        }
+
+        return Inertia::render('Track/Result', [
+            'request' => [
+                'tracking_id' => $documentRequest->tracking_id,
+                'full_name' => $documentRequest->full_name,
+                'email' => $documentRequest->email,
+                'lrn' => $documentRequest->lrn,
+                'grade_level' => $documentRequest->grade_level,
+                'section' => $documentRequest->section,
+                'document_type' => $documentRequest->documentType->name,
+                'document_category' => $documentRequest->documentType->category,
+                'purpose' => $documentRequest->purpose,
+                'status' => $documentRequest->status,
+                'admin_notes' => $documentRequest->admin_notes,
+                'created_at' => $documentRequest->created_at,
+                'updated_at' => $documentRequest->updated_at,
+                'logs' => $documentRequest->logs->map(fn($log) => [
+                    'action' => $log->action,
+                    'old_value' => $log->old_value,
+                    'new_value' => $log->new_value,
+                    'description' => $log->description,
+                    'created_at' => $log->created_at,
+                    'user' => $log->user?->name,
+                ]),
+            ],
+        ]);
+    }
+
+    /**
      * Verify OTP and show tracking result.
+     * @deprecated Use track() method instead - OTP no longer required
      */
     public function verify(Request $request)
     {

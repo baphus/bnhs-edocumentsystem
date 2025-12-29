@@ -70,7 +70,10 @@ Route::prefix('track')->name('track.')->group(function () {
     // Quick track (basic status only, no OTP)
     Route::get('/{tracking_id}', [TrackingController::class, 'quickTrack'])->name('quick');
     
-    // Full tracking with OTP verification
+    // Direct tracking (no OTP required - email already verified during request creation)
+    Route::post('/', [TrackingController::class, 'track'])->name('track');
+    
+    // Legacy OTP routes (kept for backward compatibility)
     Route::post('/send-otp', [TrackingController::class, 'sendOtp'])->name('send-otp');
     Route::post('/verify', [TrackingController::class, 'verify'])->name('verify');
 });
@@ -116,8 +119,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/requests/create', [RequestManagementController::class, 'create'])->name('requests.create');
     Route::post('/requests', [RequestManagementController::class, 'store'])->name('requests.store');
     Route::get('/requests/{documentRequest}', [RequestManagementController::class, 'show'])->name('requests.show');
+    Route::patch('/requests/{documentRequest}', [RequestManagementController::class, 'update'])->name('requests.update');
     Route::patch('/requests/{documentRequest}/status', [RequestManagementController::class, 'updateStatus'])->name('requests.update-status');
     Route::patch('/requests/{documentRequest}/notes', [RequestManagementController::class, 'updateNotes'])->name('requests.update-notes');
+    Route::post('/requests/bulk-update', [RequestManagementController::class, 'bulkUpdate'])->name('requests.bulk-update');
     
     // User Management (Superadmin only)
     Route::middleware(['role:superadmin'])->group(function () {

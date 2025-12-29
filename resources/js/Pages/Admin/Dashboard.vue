@@ -37,7 +37,7 @@ const formatDate = (date: string) => {
 </script>
 
 <template>
-    <Head title="Admin Dashboard" />
+    <Head title="Dashboard" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -136,7 +136,7 @@ const formatDate = (date: string) => {
                         </div>
                         <div>
                             <h3 class="font-semibold text-gray-900">Manage Users</h3>
-                            <p class="text-sm text-gray-500">Admin user management</p>
+                            <p class="text-sm text-gray-500">User management</p>
                         </div>
                     </Link>
                 </div>

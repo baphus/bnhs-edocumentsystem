@@ -1,73 +1,21 @@
 <script setup lang="ts">
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
-const page = usePage();
-const flash = computed(() => page.props.flash as { success?: string } | undefined);
-const otpSent = computed(() => (page.props as any).otp_sent === true);
-
-const otpSentRef = ref(otpSent.value);
-const countdown = ref(0);
-let countdownInterval: ReturnType<typeof setInterval> | null = null;
-
-const initialForm = useForm({
+const form = useForm({
     tracking_id: '',
     email: '',
 });
-
-const otpForm = useForm({
-    tracking_id: '',
-    email: '',
-    otp: '',
-});
-
-const canResend = computed(() => countdown.value === 0);
 
 const formatTrackingId = (e: Event) => {
     const input = e.target as HTMLInputElement;
     let value = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
-    initialForm.tracking_id = value;
+    form.tracking_id = value;
 };
 
-const sendOtp = () => {
-    initialForm.post(route('track.send-otp'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            otpSentRef.value = true;
-            otpForm.tracking_id = initialForm.tracking_id;
-            otpForm.email = initialForm.email;
-            startCountdown();
-        },
-    });
-};
-
-const verifyOtp = () => {
-    otpForm.post(route('track.verify'), {
+const trackRequest = () => {
+    form.post(route('track.track'), {
         preserveScroll: true,
     });
-};
-
-const startCountdown = () => {
-    countdown.value = 60;
-    if (countdownInterval) clearInterval(countdownInterval);
-    countdownInterval = setInterval(() => {
-        countdown.value--;
-        if (countdown.value <= 0) {
-            clearInterval(countdownInterval!);
-        }
-    }, 1000);
-};
-
-const resendOtp = () => {
-    if (canResend.value) {
-        sendOtp();
-    }
-};
-
-const formatOtp = (e: Event) => {
-    const input = e.target as HTMLInputElement;
-    input.value = input.value.replace(/\D/g, '').slice(0, 6);
-    otpForm.otp = input.value;
 };
 </script>
 
@@ -103,25 +51,25 @@ const formatOtp = (e: Event) => {
                     </div>
                     <h1 class="mt-4 text-2xl font-bold text-gray-900">Track Your Request</h1>
                     <p class="mt-2 text-gray-600">
-                        {{ otpSentRef ? 'Enter the 6-digit code sent to your email' : 'Enter your tracking ID and email to verify your request' }}
+                        Enter your tracking ID and email to view your request details
                     </p>
                 </div>
 
-                <!-- Step 1: Enter Tracking ID and Email -->
-                <form v-if="!otpSentRef" @submit.prevent="sendOtp" class="mt-8">
+                <!-- Tracking Form -->
+                <form @submit.prevent="trackRequest" class="mt-8">
                     <div class="space-y-4">
                         <div>
                             <label for="tracking_id" class="block text-sm font-medium text-gray-700">Tracking ID</label>
                             <input
                                 id="tracking_id"
                                 type="text"
-                                :value="initialForm.tracking_id"
+                                :value="form.tracking_id"
                                 @input="formatTrackingId"
                                 required
                                 placeholder="BNHS-XXXXXXXX"
                                 class="mt-1 block w-full rounded-lg border-gray-300 py-3 pl-4 pr-4 text-lg font-mono uppercase shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
                             />
-                            <p v-if="initialForm.errors.tracking_id" class="mt-1 text-sm text-red-600">{{ initialForm.errors.tracking_id }}</p>
+                            <p v-if="form.errors.tracking_id" class="mt-1 text-sm text-red-600">{{ form.errors.tracking_id }}</p>
                         </div>
 
                         <div>
@@ -129,70 +77,23 @@ const formatOtp = (e: Event) => {
                             <input
                                 id="email"
                                 type="email"
-                                v-model="initialForm.email"
+                                v-model="form.email"
                                 required
                                 placeholder="your.email@gmail.com"
                                 class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
                             />
-                            <p v-if="initialForm.errors.email" class="mt-1 text-sm text-red-600">{{ initialForm.errors.email }}</p>
+                            <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
                         </div>
                     </div>
 
                     <button
                         type="submit"
-                        :disabled="initialForm.processing || !initialForm.tracking_id || !initialForm.email"
+                        :disabled="form.processing || !form.tracking_id || !form.email"
                         class="mt-6 w-full rounded-xl bg-bnhs-blue py-3 font-semibold text-white transition hover:bg-bnhs-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        <span v-if="initialForm.processing">Sending...</span>
-                        <span v-else>Send Verification Code</span>
+                        <span v-if="form.processing">Loading...</span>
+                        <span v-else>Track Request</span>
                     </button>
-                </form>
-
-                <!-- Step 2: Enter OTP -->
-                <form v-else @submit.prevent="verifyOtp" class="mt-8">
-                    <div v-if="flash?.success" class="mb-4 rounded-lg bg-green-50 p-3 text-center text-sm text-green-700">
-                        {{ flash.success }}
-                    </div>
-
-                    <div class="mb-4 rounded-lg bg-green-50 p-3 text-center text-sm text-green-700">
-                        Code sent to <strong>{{ otpForm.email }}</strong>
-                    </div>
-
-                    <div>
-                        <label for="otp" class="block text-sm font-medium text-gray-700">Verification Code</label>
-                        <input
-                            id="otp"
-                            type="text"
-                            :value="otpForm.otp"
-                            @input="formatOtp"
-                            required
-                            maxlength="6"
-                            placeholder="000000"
-                            class="mt-1 block w-full rounded-lg border-gray-300 text-center text-2xl font-mono tracking-[0.5em] shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                        />
-                        <p v-if="otpForm.errors.otp" class="mt-1 text-sm text-red-600">{{ otpForm.errors.otp }}</p>
-                    </div>
-
-                    <button
-                        type="submit"
-                        :disabled="otpForm.processing || otpForm.otp.length !== 6"
-                        class="mt-6 w-full rounded-xl bg-bnhs-blue py-3 font-semibold text-white transition hover:bg-bnhs-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        <span v-if="otpForm.processing">Verifying...</span>
-                        <span v-else>Verify & View Details</span>
-                    </button>
-
-                    <div class="mt-4 text-center">
-                        <button
-                            type="button"
-                            @click="resendOtp"
-                            :disabled="!canResend || initialForm.processing"
-                            class="text-sm text-bnhs-blue hover:underline disabled:cursor-not-allowed disabled:text-gray-400"
-                        >
-                            <span v-if="!canResend">Resend code in {{ countdown }}s</span>
-                            <span v-else>Didn't receive code? Resend</span>
-                        </button>
-                    </div>
                 </form>
             </div>
 

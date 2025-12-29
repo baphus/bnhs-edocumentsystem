@@ -58,12 +58,12 @@ const formatDate = (date: string) => {
 </script>
 
 <template>
-    <Head title="Superadmin Dashboard" />
+    <Head title="Dashboard" />
 
     <AuthenticatedLayout>
         <template #header>
             <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                Superadmin Dashboard
+                Dashboard
             </h2>
         </template>
 

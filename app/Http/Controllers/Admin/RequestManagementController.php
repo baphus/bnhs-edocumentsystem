@@ -156,6 +156,7 @@ class RequestManagementController extends Controller
 
         // Log the creation
         RequestLog::create([
+            'document_request_id' => $documentRequest->id,
             'user_id' => $request->user()->id,
             'action' => 'request_created',
             'description' => "Admin {$request->user()->name} created request {$documentRequest->tracking_id}",
@@ -177,6 +178,7 @@ class RequestManagementController extends Controller
                 'id' => $documentRequest->id,
                 'tracking_id' => $documentRequest->tracking_id,
                 'email' => $documentRequest->email,
+                'student_email' => $documentRequest->email,
                 'first_name' => $documentRequest->first_name,
                 'middle_name' => $documentRequest->middle_name,
                 'last_name' => $documentRequest->last_name,
@@ -187,21 +189,21 @@ class RequestManagementController extends Controller
                 'track_strand' => $documentRequest->track_strand,
                 'school_year_last_attended' => $documentRequest->school_year_last_attended,
                 'photo_path' => $documentRequest->photo_path,
-                'document_type' => $documentRequest->documentType->name,
-                'document_category' => $documentRequest->documentType->category,
+                'document_type' => $documentRequest->documentType ? ['name' => $documentRequest->documentType->name] : null,
+                'document_category' => $documentRequest->documentType->category ?? null,
                 'purpose' => $documentRequest->purpose,
                 'status' => $documentRequest->status,
                 'admin_notes' => $documentRequest->admin_notes,
                 'processed_by' => $documentRequest->processedBy?->name,
                 'created_at' => $documentRequest->created_at,
                 'updated_at' => $documentRequest->updated_at,
-                'logs' => $documentRequest->logs->map(fn($log) => [
+                'request_logs' => $documentRequest->logs->map(fn($log) => [
                     'id' => $log->id,
                     'action' => $log->action,
                     'old_value' => $log->old_value,
                     'new_value' => $log->new_value,
                     'description' => $log->description,
-                    'user' => $log->user?->name,
+                    'user' => $log->user ? ['name' => $log->user->name] : null,
                     'created_at' => $log->created_at,
                 ]),
             ],
@@ -261,14 +263,178 @@ class RequestManagementController extends Controller
 
         // Log the change
         $documentRequest->logs()->create([
+            'document_request_id' => $documentRequest->id,
             'user_id' => $request->user()->id,
             'action' => 'note_updated',
             'old_value' => $oldNotes ? 'Previous note' : null,
             'new_value' => $validated['admin_notes'] ? 'Note updated' : 'Note cleared',
-            'description' => $validated['admin_notes'],
+            'description' => $validated['admin_notes'] ?: 'Notes cleared',
         ]);
 
         return back()->with('success', 'Notes updated successfully.');
+    }
+
+    /**
+     * Update a request (for superadmin inline editing).
+     */
+    public function update(Request $request, DocumentRequest $documentRequest)
+    {
+        // Only superadmin can update requests
+        if ($request->user()->role !== 'superadmin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'lrn' => 'nullable|string|size:12|regex:/^\d{12}$/',
+            'status' => ['nullable', Rule::in(['Pending', 'Verified', 'Processing', 'Ready', 'Completed', 'Rejected'])],
+        ]);
+
+        $oldStatus = $documentRequest->status;
+        $changes = [];
+
+        if (isset($validated['first_name']) && $validated['first_name'] !== $documentRequest->first_name) {
+            $changes[] = "First name: {$documentRequest->first_name} → {$validated['first_name']}";
+            $documentRequest->first_name = $validated['first_name'];
+        }
+
+        if (isset($validated['last_name']) && $validated['last_name'] !== $documentRequest->last_name) {
+            $changes[] = "Last name: {$documentRequest->last_name} → {$validated['last_name']}";
+            $documentRequest->last_name = $validated['last_name'];
+        }
+
+        if (isset($validated['email']) && $validated['email'] !== $documentRequest->email) {
+            $changes[] = "Email: {$documentRequest->email} → {$validated['email']}";
+            $documentRequest->email = $validated['email'];
+        }
+
+        if (isset($validated['lrn']) && $validated['lrn'] !== $documentRequest->lrn) {
+            $changes[] = "LRN: {$documentRequest->lrn} → {$validated['lrn']}";
+            $documentRequest->lrn = $validated['lrn'];
+        }
+
+        if (isset($validated['status']) && $validated['status'] !== $documentRequest->status) {
+            $documentRequest->updateStatus(
+                $validated['status'],
+                $request->user(),
+                null
+            );
+
+            // Update completed_at if status is Completed
+            if ($validated['status'] === 'Completed' && !$documentRequest->completed_at) {
+                $documentRequest->update(['completed_at' => now()]);
+            }
+
+            // Reload relationship for email
+            $documentRequest->load('documentType');
+
+            // Send email notification
+            try {
+                \Illuminate\Support\Facades\Mail::to($documentRequest->email)
+                    ->send(new \App\Mail\RequestStatusUpdatedMail($documentRequest, $oldStatus));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send status update email: ' . $e->getMessage());
+            }
+        } else {
+            $documentRequest->save();
+        }
+
+        // Log changes if any
+        if (!empty($changes) || isset($validated['status'])) {
+            $documentRequest->logs()->create([
+                'document_request_id' => $documentRequest->id,
+                'user_id' => $request->user()->id,
+                'action' => 'request_updated',
+                'old_value' => null,
+                'new_value' => null,
+                'description' => !empty($changes) ? implode(', ', $changes) : "Status changed from {$oldStatus} to {$validated['status']}",
+            ]);
+        }
+
+        return back()->with('success', 'Request updated successfully.');
+    }
+
+    /**
+     * Bulk update request statuses and/or notes.
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'request_ids' => ['required', 'array'],
+            'request_ids.*' => ['exists:document_requests,id'],
+            'status' => ['nullable', Rule::in(['Pending', 'Verified', 'Processing', 'Ready', 'Completed', 'Rejected'])],
+            'admin_notes' => 'nullable|string|max:2000',
+        ]);
+
+        // Ensure at least one field is provided
+        if (!$validated['status'] && !$validated['admin_notes']) {
+            return back()->withErrors(['status' => 'Please provide either a status or notes to update.']);
+        }
+
+        $requests = DocumentRequest::whereIn('id', $validated['request_ids'])->get();
+        $count = 0;
+        $updates = [];
+
+        foreach ($requests as $req) {
+            $oldStatus = $req->status;
+            $oldNotes = $req->admin_notes;
+
+            // Update status if provided
+            if ($validated['status']) {
+                $req->updateStatus(
+                    $validated['status'],
+                    $request->user(),
+                    null
+                );
+
+                // Update completed_at if status is Completed
+                if ($validated['status'] === 'Completed' && !$req->completed_at) {
+                    $req->update(['completed_at' => now()]);
+                }
+
+                // Reload relationship for email
+                $req->load('documentType');
+
+                // Send email notification
+                try {
+                    \Illuminate\Support\Facades\Mail::to($req->email)
+                        ->send(new \App\Mail\RequestStatusUpdatedMail($req, $oldStatus));
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send status update email for request ' . $req->tracking_id . ': ' . $e->getMessage());
+                }
+            }
+
+            // Update notes if provided
+            if (isset($validated['admin_notes'])) {
+                $req->update(['admin_notes' => $validated['admin_notes']]);
+
+                // Log the change
+                $req->logs()->create([
+                    'document_request_id' => $req->id,
+                    'user_id' => $request->user()->id,
+                    'action' => 'note_updated',
+                    'old_value' => $oldNotes ? 'Previous note' : null,
+                    'new_value' => $validated['admin_notes'] ? 'Note updated' : 'Note cleared',
+                    'description' => $validated['admin_notes'] ?: 'Notes cleared',
+                ]);
+            }
+
+            $count++;
+        }
+
+        // Build success message
+        $messageParts = [];
+        if ($validated['status']) {
+            $messageParts[] = 'status';
+        }
+        if (isset($validated['admin_notes'])) {
+            $messageParts[] = 'notes';
+        }
+        $message = ucfirst(implode(' and ', $messageParts)) . ' updated for ' . $count . ' request(s) successfully.';
+
+        return back()->with('success', $message);
     }
 
     /**
