@@ -97,6 +97,7 @@ class SuperadminUserController extends Controller
         
         // Log the impersonation
         RequestLog::create([
+            'document_request_id' => null,
             'user_id' => $request->user()->id,
             'action' => 'impersonate',
             'description' => "Superadmin {$request->user()->name} impersonated user {$user->name}",
@@ -151,6 +152,7 @@ class SuperadminUserController extends Controller
 
         // Log the action
         RequestLog::create([
+            'document_request_id' => null,
             'user_id' => $request->user()->id,
             'action' => 'password_reset',
             'description' => "Superadmin {$request->user()->name} reset password for user {$user->name}",
@@ -178,6 +180,7 @@ class SuperadminUserController extends Controller
 
         // Log the action
         RequestLog::create([
+            'document_request_id' => null,
             'user_id' => $request->user()->id,
             'action' => 'status_change',
             'old_value' => $oldStatus,
@@ -209,6 +212,7 @@ class SuperadminUserController extends Controller
 
         // Log the action
         RequestLog::create([
+            'document_request_id' => null,
             'user_id' => $request->user()->id,
             'action' => 'bulk_status_change',
             'description' => "Superadmin {$request->user()->name} bulk updated status for " . count($users) . " users",
@@ -232,6 +236,7 @@ class SuperadminUserController extends Controller
 
         // Log the action
         RequestLog::create([
+            'document_request_id' => null,
             'user_id' => $request->user()->id,
             'action' => 'user_deleted',
             'description' => "Superadmin {$request->user()->name} deleted user {$userName}",

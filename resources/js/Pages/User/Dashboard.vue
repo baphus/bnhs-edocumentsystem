@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
 const props = defineProps<{
     email: string;
@@ -83,9 +84,7 @@ const sidebarOpen = ref(false);
         <div class="border-b border-gray-200 bg-white lg:hidden">
             <div class="flex items-center justify-between px-4 py-3">
                 <Link :href="route('home')" class="flex items-center gap-2">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-bnhs-blue">
-                        <span class="text-xs font-bold text-white">BNHS</span>
-                    </div>
+                    <ApplicationLogo class="h-8 w-auto" />
                     <span class="font-semibold text-gray-900">My Dashboard</span>
                 </Link>
                 <button
@@ -111,9 +110,7 @@ const sidebarOpen = ref(false);
                     <!-- Sidebar Header -->
                     <div class="border-b border-gray-200 p-4">
                         <Link :href="route('home')" class="flex items-center gap-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-bnhs-blue">
-                                <span class="text-sm font-bold text-white">BNHS</span>
-                            </div>
+                            <ApplicationLogo class="h-10 w-auto" />
                             <div>
                                 <p class="font-semibold text-gray-900">eDocument System</p>
                                 <p class="text-xs text-gray-500">User Dashboard</p>

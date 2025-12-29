@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 </script>
 
 <template>
@@ -8,9 +9,7 @@ import { Link } from '@inertiajs/vue3';
     >
         <div class="text-center">
             <Link href="/" class="flex flex-col items-center">
-                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-bnhs-blue shadow-lg">
-                    <span class="text-2xl font-bold text-white">BNHS</span>
-                </div>
+                <ApplicationLogo class="h-20 w-auto" />
                 <h1 class="mt-3 text-xl font-semibold text-bnhs-blue">
                     Bato National High School
                 </h1>

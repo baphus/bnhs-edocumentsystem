@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
 const form = useForm({
     tracking_id: '',
@@ -28,9 +29,7 @@ const trackRequest = () => {
             <div class="mx-auto max-w-4xl px-4 py-4">
                 <div class="flex items-center justify-between">
                     <Link :href="route('home')" class="flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-bnhs-blue">
-                            <span class="text-sm font-bold text-white">BNHS</span>
-                        </div>
+                        <ApplicationLogo class="h-10 w-auto" />
                         <span class="font-semibold text-gray-900">eDocument System</span>
                     </Link>
                     <Link :href="route('home')" class="text-sm text-gray-600 hover:text-bnhs-blue">

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import SidebarLink from '@/Components/SidebarLink.vue';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const sidebarCollapsed = ref(false);
@@ -95,9 +96,7 @@ onUnmounted(() => {
                         class="flex items-center gap-3"
                         :class="sidebarCollapsed ? 'justify-center' : ''"
                     >
-                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bnhs-blue">
-                            <span class="text-sm font-bold text-white">BNHS</span>
-                        </div>
+                        <ApplicationLogo class="h-10 w-auto shrink-0" />
                         <div v-if="!sidebarCollapsed" class="hidden lg:block">
                             <p class="text-sm font-semibold text-bnhs-blue">eDocument System</p>
                             <p class="text-xs text-gray-500">Bato National High School</p>

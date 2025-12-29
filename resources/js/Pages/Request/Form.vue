@@ -2,6 +2,7 @@
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import { DocumentType } from '@/types';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
 const props = defineProps<{
     documentType: DocumentType;
@@ -137,9 +138,7 @@ const submitRequest = () => {
             <div class="mx-auto max-w-4xl px-4 py-4">
                 <div class="flex items-center justify-between">
                     <Link :href="route('home')" class="flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-bnhs-blue">
-                            <span class="text-sm font-bold text-white">BNHS</span>
-                        </div>
+                        <ApplicationLogo class="h-10 w-auto" />
                         <span class="font-semibold text-gray-900">eDocument System</span>
                     </Link>
                 </div>

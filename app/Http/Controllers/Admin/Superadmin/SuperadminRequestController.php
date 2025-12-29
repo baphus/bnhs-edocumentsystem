@@ -163,6 +163,7 @@ class SuperadminRequestController extends Controller
 
         // Log the creation
         RequestLog::create([
+            'document_request_id' => $documentRequest->id,
             'user_id' => $request->user()->id,
             'action' => 'request_created',
             'description' => "Superadmin {$request->user()->name} created request {$documentRequest->tracking_id}",
@@ -195,6 +196,7 @@ class SuperadminRequestController extends Controller
                 }
                 
                 RequestLog::create([
+                    'document_request_id' => null,
                     'user_id' => $request->user()->id,
                     'action' => 'bulk_delete',
                     'description' => "Superadmin {$request->user()->name} bulk deleted {$count} requests",
@@ -239,6 +241,7 @@ class SuperadminRequestController extends Controller
                 }
                 
                 RequestLog::create([
+                    'document_request_id' => null,
                     'user_id' => $request->user()->id,
                     'action' => 'bulk_resend_otp',
                     'description' => "Superadmin {$request->user()->name} bulk resent OTP for {$count} requests",
@@ -259,6 +262,7 @@ class SuperadminRequestController extends Controller
         $documentRequest->delete();
 
         RequestLog::create([
+            'document_request_id' => $documentRequest->id,
             'user_id' => $request->user()->id,
             'action' => 'request_deleted',
             'description' => "Superadmin {$request->user()->name} deleted request {$trackingId}",

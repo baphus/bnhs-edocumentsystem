@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
 defineProps<{
     canLogin?: boolean;
@@ -15,9 +16,7 @@ defineProps<{
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex h-16 items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-bnhs-blue shadow-lg">
-                            <span class="text-sm font-bold text-white">BNHS</span>
-                        </div>
+                        <ApplicationLogo class="h-10 w-auto" />
                         <div class="hidden sm:block">
                             <p class="text-sm font-semibold text-bnhs-blue">eDocument System</p>
                             <p class="text-xs text-gray-500">Bato National High School</p>
@@ -237,13 +236,12 @@ defineProps<{
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-bnhs-blue">
-                            <span class="text-sm font-bold text-white">BNHS</span>
-                        </div>
+                        <ApplicationLogo class="h-10 w-auto" />
                         <div>
                             <p class="text-sm font-semibold text-gray-900">Bato National High School</p>
                             <p class="text-xs text-gray-500">Toledo City, Cebu</p>
                         </div>
+
                     </div>
                     <p class="text-sm text-gray-500">
                         &copy; {{ new Date().getFullYear() }} BNHS eDocument System. All rights reserved.
