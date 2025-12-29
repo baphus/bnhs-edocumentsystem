@@ -19,6 +19,7 @@ const form = useForm({
     track_strand: '',
     school_year_last_attended: '',
     purpose: '',
+    purpose_other: '',
     quantity: 1,
     photo: null as File | null,
     document_type_id: props.documentType.id,
@@ -47,6 +48,19 @@ const trackStrands = [
     { value: 'TVL-IA', label: 'TVL - Industrial Arts' },
     { value: 'TVL-AFA', label: 'TVL - Agri-Fishery Arts' },
 ];
+
+const purposeOptions = [
+    { value: 'College Enrollment', label: 'College Enrollment' },
+    { value: 'Job Application', label: 'Job Application' },
+    { value: 'Scholarship Application', label: 'Scholarship Application' },
+    { value: 'Transfer to Another School', label: 'Transfer to Another School' },
+    { value: 'Personal Records', label: 'Personal Records' },
+    { value: 'Other', label: 'Other' },
+];
+
+const showPurposeOther = computed(() => {
+    return form.purpose === 'Other';
+});
 
 const showTrackStrand = computed(() => {
     return form.grade_level === 'Grade 11' || form.grade_level === 'Grade 12';
@@ -77,6 +91,12 @@ const schoolYears = computed(() => {
 watch(() => form.grade_level, (newValue) => {
     if (!showTrackStrand.value) {
         form.track_strand = '';
+    }
+});
+
+watch(() => form.purpose, (newValue) => {
+    if (newValue !== 'Other') {
+        form.purpose_other = '';
     }
 });
 
@@ -123,7 +143,13 @@ const removePhoto = () => {
 };
 
 const submitRequest = () => {
-    form.post(route('request.submit'), {
+    // Use purpose_other if "Other" is selected, otherwise use the selected purpose
+    const finalPurpose = form.purpose === 'Other' ? form.purpose_other : form.purpose;
+    
+    form.transform((data) => ({
+        ...data,
+        purpose: finalPurpose,
+    })).post(route('request.submit'), {
         forceFormData: true,
     });
 };
@@ -382,15 +408,30 @@ const submitRequest = () => {
                             </div>
                             <div>
                                 <label for="purpose" class="block text-sm font-medium text-gray-700">Purpose of Request *</label>
-                                <textarea
+                                <select
                                     id="purpose"
                                     v-model="form.purpose"
-                                    rows="3"
-                                    placeholder="e.g., For college enrollment, job application..."
                                     required
                                     class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                ></textarea>
+                                >
+                                    <option value="">Select Purpose</option>
+                                    <option v-for="option in purposeOptions" :key="option.value" :value="option.value">
+                                        {{ option.label }}
+                                    </option>
+                                </select>
                                 <p v-if="form.errors.purpose" class="mt-1 text-sm text-red-600">{{ form.errors.purpose }}</p>
+                                <div v-if="showPurposeOther" class="mt-3">
+                                    <label for="purpose_other" class="block text-sm font-medium text-gray-700">Please specify *</label>
+                                    <input
+                                        id="purpose_other"
+                                        type="text"
+                                        v-model="form.purpose_other"
+                                        :required="showPurposeOther"
+                                        placeholder="Enter your purpose"
+                                        class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    />
+                                    <p v-if="form.errors.purpose_other" class="mt-1 text-sm text-red-600">{{ form.errors.purpose_other }}</p>
+                                </div>
                             </div>
                         </div>
                     </div>

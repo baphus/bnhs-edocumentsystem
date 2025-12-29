@@ -22,9 +22,7 @@
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
                                     <td align="center">
-                                        <div style="display: inline-block; width: 60px; height: 60px; background-color: #ffffff; border-radius: 50%; line-height: 60px; text-align: center; margin-bottom: 15px;">
-                                            <span style="color: #0038a8; font-size: 20px; font-weight: bold;">BNHS</span>
-                                        </div>
+                                        <img src="{{ config('app.url') }}/images/logo.png" alt="BNHS Logo" style="height: 80px; width: auto; margin-bottom: 15px; display: block;" />
                                         <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">Bato National High School</h1>
                                         <p style="margin: 5px 0 0 0; color: #e6ebf5; font-size: 14px;">eDocument System</p>
                                     </td>
