@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Log;
+
 
 class RequestManagementController extends Controller
 {
@@ -243,7 +245,7 @@ class RequestManagementController extends Controller
                 ->send(new \App\Mail\RequestStatusUpdatedMail($documentRequest, $oldStatus));
         } catch (\Exception $e) {
             // Log error but don't fail the status update
-            \Log::error('Failed to send status update email: ' . $e->getMessage());
+            Log::error('Failed to send status update email: ' . $e->getMessage());
         }
 
         return back()->with('success', 'Request status updated successfully.');
@@ -335,7 +337,7 @@ class RequestManagementController extends Controller
                 \Illuminate\Support\Facades\Mail::to($documentRequest->email)
                     ->send(new \App\Mail\RequestStatusUpdatedMail($documentRequest, $oldStatus));
             } catch (\Exception $e) {
-                \Log::error('Failed to send status update email: ' . $e->getMessage());
+                Log::error('Failed to send status update email: ' . $e->getMessage());
             }
         } else {
             $documentRequest->save();
@@ -402,7 +404,7 @@ class RequestManagementController extends Controller
                     \Illuminate\Support\Facades\Mail::to($req->email)
                         ->send(new \App\Mail\RequestStatusUpdatedMail($req, $oldStatus));
                 } catch (\Exception $e) {
-                    \Log::error('Failed to send status update email for request ' . $req->tracking_id . ': ' . $e->getMessage());
+                    Log::error('Failed to send status update email for request ' . $req->tracking_id . ': ' . $e->getMessage());
                 }
             }
 

@@ -171,8 +171,12 @@ class DocumentRequestController extends Controller
             $photoPath = $request->file('photo')->store('photos', 'public');
         }
 
-        // Calculate estimated completion date (default: 7 business days)
-        $estimatedCompletionDate = now()->addWeekdays(7);
+        // Get document type to use its processing_days
+        $documentType = DocumentType::findOrFail($validated['document_type_id']);
+        $processingDays = $documentType->processing_days ?? 7; // Fallback to 7 if not set
+
+        // Calculate estimated completion date using document type's processing days
+        $estimatedCompletionDate = now()->addWeekdays($processingDays);
 
         // Check for duplicate submission (same email, same document type, pending status within last 24 hours)
         $recentDuplicate = DocumentRequest::where('email', $validated['email'])
