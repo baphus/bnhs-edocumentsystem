@@ -20,6 +20,8 @@ const props = defineProps<{
         search?: string;
         status?: string;
         document_type_id?: number;
+        from_date?: string;
+        to_date?: string;
     };
     documentTypes: Array<{ id: number; name: string }>;
     gradeLevels?: Record<string, string>;
@@ -30,6 +32,8 @@ const props = defineProps<{
 const search = ref(props.filters.search || '');
 const statusFilter = ref(props.filters.status || '');
 const documentTypeFilter = ref(props.filters.document_type_id || '');
+const fromDateFilter = ref(props.filters.from_date || '');
+const toDateFilter = ref(props.filters.to_date || '');
 const showCreateModal = ref(false);
 const selectedRequests = ref<number[]>([]);
 const bulkStatus = ref('');
@@ -108,6 +112,8 @@ const applyFilters = () => {
         search: search.value || undefined,
         status: statusFilter.value || undefined,
         document_type_id: documentTypeFilter.value || undefined,
+        from_date: fromDateFilter.value || undefined,
+        to_date: toDateFilter.value || undefined,
     }, {
         preserveState: true,
         replace: true,
@@ -121,7 +127,7 @@ watch(search, () => {
     searchTimeout = setTimeout(applyFilters, 300);
 });
 
-watch([statusFilter, documentTypeFilter], applyFilters);
+watch([statusFilter, documentTypeFilter, fromDateFilter, toDateFilter], applyFilters);
 
 const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -149,6 +155,8 @@ const clearFilters = () => {
     search.value = '';
     statusFilter.value = '';
     documentTypeFilter.value = '';
+    fromDateFilter.value = '';
+    toDateFilter.value = '';
     router.get(route('admin.requests.index'));
 };
 
@@ -262,7 +270,7 @@ const saveEdit = (requestId: number) => {
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <!-- Filters -->
                 <div class="rounded-xl bg-white p-6 shadow">
-                    <div class="grid gap-4 sm:grid-cols-4">
+                    <div class="grid gap-4 sm:grid-cols-6">
                         <div class="sm:col-span-2">
                             <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
                             <input
@@ -299,13 +307,31 @@ const saveEdit = (requestId: number) => {
                                 </option>
                             </select>
                         </div>
+                        <div>
+                            <label for="fromDate" class="block text-sm font-medium text-gray-700">From Date</label>
+                            <input
+                                id="fromDate"
+                                type="date"
+                                v-model="fromDateFilter"
+                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                            />
+                        </div>
+                        <div>
+                            <label for="toDate" class="block text-sm font-medium text-gray-700">To Date</label>
+                            <input
+                                id="toDate"
+                                type="date"
+                                v-model="toDateFilter"
+                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                            />
+                        </div>
                     </div>
                     <div class="mt-4 flex items-center justify-between">
                         <p class="text-sm text-gray-500">
                             Showing {{ requests.data.length }} of {{ requests.total }} requests
                         </p>
                         <button
-                            v-if="filters.search || filters.status || filters.document_type_id"
+                            v-if="filters.search || filters.status || filters.document_type_id || filters.from_date || filters.to_date"
                             @click="clearFilters"
                             class="text-sm text-bnhs-blue hover:underline"
                         >

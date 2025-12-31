@@ -21,12 +21,9 @@ const form = useForm({
     purpose: '',
     purpose_other: '',
     quantity: 1,
-    photo: null as File | null,
     document_type_id: props.documentType.id,
     email: props.email,
 });
-
-const photoPreview = ref<string | null>(null);
 const lrnError = ref('');
 
 const gradeLevels = [
@@ -113,33 +110,6 @@ const formatLrn = (e: Event) => {
     input.value = input.value.replace(/\D/g, '').slice(0, 12);
     form.lrn = input.value;
     validateLrn();
-};
-
-const handlePhotoUpload = (e: Event) => {
-    const input = e.target as HTMLInputElement;
-    const file = input.files?.[0];
-    
-    if (file) {
-        // Validate file type
-        if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-            form.errors.photo = 'Please upload a JPG or PNG image';
-            return;
-        }
-        
-        // Validate file size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            form.errors.photo = 'Image must be less than 2MB';
-            return;
-        }
-        
-        form.photo = file;
-        photoPreview.value = URL.createObjectURL(file);
-    }
-};
-
-const removePhoto = () => {
-    form.photo = null;
-    photoPreview.value = null;
 };
 
 const submitRequest = () => {
@@ -346,45 +316,6 @@ const submitRequest = () => {
                                     {{ form.errors.school_year_last_attended }}
                                 </p>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- 2x2 Photo -->
-                    <div>
-                        <h2 class="mb-4 text-lg font-semibold text-gray-900">2x2 Photo <span class="text-sm font-normal text-gray-500">(Optional)</span></h2>
-                        <div class="rounded-lg border-2 border-dashed border-gray-300 p-6">
-                            <div v-if="!photoPreview" class="text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <div class="mt-4">
-                                    <label for="photo" class="cursor-pointer rounded-lg bg-bnhs-blue px-4 py-2 text-sm font-medium text-white hover:bg-bnhs-blue-600">
-                                        Upload Photo
-                                    </label>
-                                    <input
-                                        id="photo"
-                                        type="file"
-                                        accept="image/jpeg,image/jpg,image/png"
-                                        @change="handlePhotoUpload"
-                                        class="hidden"
-                                    />
-                                </div>
-                                <p class="mt-2 text-xs text-gray-500">JPG or PNG, max 2MB</p>
-                            </div>
-                            <div v-else class="flex items-center justify-center gap-6">
-                                <img :src="photoPreview" alt="Preview" class="h-32 w-32 rounded-lg border object-cover shadow" />
-                                <div>
-                                    <p class="font-medium text-gray-900">Photo uploaded</p>
-                                    <button
-                                        type="button"
-                                        @click="removePhoto"
-                                        class="mt-2 text-sm text-red-600 hover:underline"
-                                    >
-                                        Remove photo
-                                    </button>
-                                </div>
-                            </div>
-                            <p v-if="form.errors.photo" class="mt-2 text-center text-sm text-red-600">{{ form.errors.photo }}</p>
                         </div>
                     </div>
 

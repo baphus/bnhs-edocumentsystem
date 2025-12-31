@@ -158,18 +158,10 @@ class DocumentRequestController extends Controller
             'school_year_last_attended' => 'required|string|max:20',
             'purpose' => 'required|string|max:1000',
             'quantity' => 'nullable|integer|min:1|max:10',
-            'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048|dimensions:min_width=200,min_height=200',
             'document_type_id' => 'required|exists:document_types,id',
         ], [
             'lrn.regex' => 'LRN must be exactly 12 digits.',
-            'photo.dimensions' => 'Photo must be at least 200x200 pixels.',
         ]);
-
-        // Handle photo upload
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('photos', 'public');
-        }
 
         // Get document type to use its processing_days
         $documentType = DocumentType::findOrFail($validated['document_type_id']);
@@ -200,7 +192,6 @@ class DocumentRequestController extends Controller
             'section' => $validated['section'],
             'track_strand' => $validated['track_strand'],
             'school_year_last_attended' => $validated['school_year_last_attended'],
-            'photo_path' => $photoPath,
             'document_type_id' => $validated['document_type_id'],
             'purpose' => $validated['purpose'],
             'quantity' => $validated['quantity'] ?? 1,

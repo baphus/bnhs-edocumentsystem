@@ -49,6 +49,8 @@ const props = defineProps<Props>();
 const search = ref(props.filters.search || '');
 const statusFilter = ref(props.filters.status || '');
 const documentTypeFilter = ref(props.filters.document_type || '');
+const fromDateFilter = ref(props.filters.from_date || '');
+const toDateFilter = ref(props.filters.to_date || '');
 const selectedRequests = ref<number[]>([]);
 const showCreateModal = ref(false);
 
@@ -115,6 +117,8 @@ const applyFilters = () => {
         search: search.value || undefined,
         status: statusFilter.value || undefined,
         document_type: documentTypeFilter.value || undefined,
+        from_date: fromDateFilter.value || undefined,
+        to_date: toDateFilter.value || undefined,
     }, {
         preserveState: true,
         replace: true,
@@ -197,7 +201,7 @@ const getStatusColor = (status: string) => {
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <!-- Filters -->
                 <div class="mb-6 rounded-xl bg-white p-6 shadow">
-                    <div class="grid gap-4 sm:grid-cols-4">
+                    <div class="grid gap-4 sm:grid-cols-6">
                         <div>
                             <TextInput
                                 v-model="search"
@@ -230,6 +234,24 @@ const getStatusColor = (status: string) => {
                                     {{ dt.name }}
                                 </option>
                             </select>
+                        </div>
+                        <div>
+                            <input
+                                type="date"
+                                v-model="fromDateFilter"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                @change="applyFilters"
+                                placeholder="From Date"
+                            />
+                        </div>
+                        <div>
+                            <input
+                                type="date"
+                                v-model="toDateFilter"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                @change="applyFilters"
+                                placeholder="To Date"
+                            />
                         </div>
                         <div>
                             <PrimaryButton @click="applyFilters" class="w-full">
