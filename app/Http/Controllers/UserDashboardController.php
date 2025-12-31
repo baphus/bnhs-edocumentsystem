@@ -124,8 +124,13 @@ class UserDashboardController extends Controller
 
         $latestRequest = $requests->first();
 
+        // Get the user's name from the first request
+        $userRequest = DocumentRequest::where('email', $email)->first();
+        $userName = $userRequest ? $userRequest->first_name : null;
+
         return Inertia::render('User/Dashboard', [
             'email' => $email,
+            'userName' => $userName,
             'latestRequest' => $latestRequest,
             'requestHistory' => $requests->skip(1)->values(),
             'hasRequests' => $requests->count() > 0,
