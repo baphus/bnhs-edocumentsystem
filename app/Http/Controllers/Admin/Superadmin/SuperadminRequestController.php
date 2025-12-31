@@ -59,7 +59,20 @@ class SuperadminRequestController extends Controller
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
-        $requests = $query->latest()
+        // Sorting
+        $sortBy = $request->sort_by ?? 'created_at';
+        $sortDirection = $request->sort_direction ?? 'desc';
+        
+        // Validate sort column to prevent SQL injection
+        $allowedSortColumns = ['tracking_id', 'first_name', 'last_name', 'lrn', 'document_type_id', 'status', 'otp_verified', 'created_at'];
+        if (!in_array($sortBy, $allowedSortColumns)) {
+            $sortBy = 'created_at';
+        }
+        
+        // Validate sort direction
+        $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'desc';
+
+        $requests = $query->orderBy($sortBy, $sortDirection)
             ->paginate(15)
             ->withQueryString()
             ->through(fn($req) => [
@@ -84,7 +97,7 @@ class SuperadminRequestController extends Controller
             'requests' => $requests,
             'documentTypes' => $documentTypes,
             'statuses' => $statuses,
-            'filters' => $request->only(['search', 'status', 'document_type', 'lrn', 'from_date', 'to_date']),
+            'filters' => $request->only(['search', 'status', 'document_type', 'lrn', 'from_date', 'to_date', 'sort_by', 'sort_direction']),
             'gradeLevels' => $this->getGradeLevels(),
             'trackStrands' => $this->getTrackStrands(),
             'schoolYears' => $this->getSchoolYears(),

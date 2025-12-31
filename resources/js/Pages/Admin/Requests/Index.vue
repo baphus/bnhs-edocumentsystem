@@ -22,6 +22,8 @@ const props = defineProps<{
         document_type_id?: number;
         from_date?: string;
         to_date?: string;
+        sort_by?: string;
+        sort_direction?: 'asc' | 'desc';
     };
     documentTypes: Array<{ id: number; name: string }>;
     gradeLevels?: Record<string, string>;
@@ -34,6 +36,8 @@ const statusFilter = ref(props.filters.status || '');
 const documentTypeFilter = ref(props.filters.document_type_id || '');
 const fromDateFilter = ref(props.filters.from_date || '');
 const toDateFilter = ref(props.filters.to_date || '');
+const sortBy = ref(props.filters.sort_by || 'created_at');
+const sortDirection = ref<'asc' | 'desc'>(props.filters.sort_direction || 'desc');
 const showCreateModal = ref(false);
 const selectedRequests = ref<number[]>([]);
 const bulkStatus = ref('');
@@ -114,10 +118,22 @@ const applyFilters = () => {
         document_type_id: documentTypeFilter.value || undefined,
         from_date: fromDateFilter.value || undefined,
         to_date: toDateFilter.value || undefined,
+        sort_by: sortBy.value || undefined,
+        sort_direction: sortDirection.value || undefined,
     }, {
         preserveState: true,
         replace: true,
     });
+};
+
+const sortColumn = (column: string) => {
+    if (sortBy.value === column) {
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortBy.value = column;
+        sortDirection.value = 'asc';
+    }
+    applyFilters();
 };
 
 // Debounced search
@@ -157,6 +173,8 @@ const clearFilters = () => {
     documentTypeFilter.value = '';
     fromDateFilter.value = '';
     toDateFilter.value = '';
+    sortBy.value = 'created_at';
+    sortDirection.value = 'desc';
     router.get(route('admin.requests.index'));
 };
 
@@ -407,23 +425,131 @@ const saveEdit = (requestId: number) => {
                                         class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue"
                                     />
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Tracking ID
+                                <th 
+                                    @click="sortColumn('tracking_id')"
+                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                >
+                                    <div class="flex items-center gap-1">
+                                        Tracking ID
+                                        <span v-if="sortBy === 'tracking_id'" class="text-bnhs-blue">
+                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                            </svg>
+                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </span>
+                                        <span v-else class="text-gray-300">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                            </svg>
+                                        </span>
+                                    </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Requester
+                                <th 
+                                    @click="sortColumn('last_name')"
+                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                >
+                                    <div class="flex items-center gap-1">
+                                        Requester
+                                        <span v-if="sortBy === 'last_name'" class="text-bnhs-blue">
+                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                            </svg>
+                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </span>
+                                        <span v-else class="text-gray-300">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                            </svg>
+                                        </span>
+                                    </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    LRN
+                                <th 
+                                    @click="sortColumn('lrn')"
+                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                >
+                                    <div class="flex items-center gap-1">
+                                        LRN
+                                        <span v-if="sortBy === 'lrn'" class="text-bnhs-blue">
+                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                            </svg>
+                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </span>
+                                        <span v-else class="text-gray-300">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                            </svg>
+                                        </span>
+                                    </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Document
+                                <th 
+                                    @click="sortColumn('document_type_id')"
+                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                >
+                                    <div class="flex items-center gap-1">
+                                        Document
+                                        <span v-if="sortBy === 'document_type_id'" class="text-bnhs-blue">
+                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                            </svg>
+                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </span>
+                                        <span v-else class="text-gray-300">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                            </svg>
+                                        </span>
+                                    </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Status
+                                <th 
+                                    @click="sortColumn('status')"
+                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                >
+                                    <div class="flex items-center gap-1">
+                                        Status
+                                        <span v-if="sortBy === 'status'" class="text-bnhs-blue">
+                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                            </svg>
+                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </span>
+                                        <span v-else class="text-gray-300">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                            </svg>
+                                        </span>
+                                    </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Date
+                                <th 
+                                    @click="sortColumn('created_at')"
+                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                >
+                                    <div class="flex items-center gap-1">
+                                        Date
+                                        <span v-if="sortBy === 'created_at'" class="text-bnhs-blue">
+                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                            </svg>
+                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </span>
+                                        <span v-else class="text-gray-300">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                            </svg>
+                                        </span>
+                                    </div>
                                 </th>
                                 <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Actions
