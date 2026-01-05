@@ -109,8 +109,8 @@ Route::get('/dashboard', function () {
     return redirect()->route('admin.dashboard');
 })->middleware(['auth'])->name('dashboard');
 
-// Admin Panel
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+// Registrar Panel
+Route::middleware(['auth', 'role:admin'])->prefix('registrar')->name('registrar.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     
@@ -123,6 +123,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('/requests/{documentRequest}/status', [RequestManagementController::class, 'updateStatus'])->name('requests.update-status');
     Route::patch('/requests/{documentRequest}/notes', [RequestManagementController::class, 'updateNotes'])->name('requests.update-notes');
     Route::post('/requests/bulk-update', [RequestManagementController::class, 'bulkUpdate'])->name('requests.bulk-update');
+    Route::post('/requests/bulk-delete', [RequestManagementController::class, 'bulkDelete'])->name('requests.bulk-delete');
+    Route::get('/requests/export', [RequestManagementController::class, 'export'])->name('requests.export');
     
     // User Management (Superadmin only)
     Route::middleware(['role:superadmin'])->group(function () {
@@ -135,8 +137,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     });
 });
 
-// Superadmin-only routes
-Route::middleware(['auth', 'role:superadmin'])->prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {
+// Admin-only routes
+Route::middleware(['auth', 'role:superadmin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [SuperadminDashboardController::class, 'index'])->name('dashboard');
     
@@ -154,7 +156,12 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('admin/superadmin')->name
     Route::get('/requests', [SuperadminRequestController::class, 'index'])->name('requests.index');
     Route::get('/requests/create', [SuperadminRequestController::class, 'create'])->name('requests.create');
     Route::post('/requests', [SuperadminRequestController::class, 'store'])->name('requests.store');
+    Route::get('/requests/{documentRequest}', [SuperadminRequestController::class, 'show'])->name('requests.show');
+    Route::patch('/requests/{documentRequest}', [SuperadminRequestController::class, 'update'])->name('requests.update');
+    Route::patch('/requests/{documentRequest}/status', [SuperadminRequestController::class, 'updateStatus'])->name('requests.update-status');
+    Route::patch('/requests/{documentRequest}/notes', [SuperadminRequestController::class, 'updateNotes'])->name('requests.update-notes');
     Route::post('/requests/bulk-action', [SuperadminRequestController::class, 'bulkAction'])->name('requests.bulk');
+    Route::get('/requests/export', [SuperadminRequestController::class, 'export'])->name('requests.export');
     Route::delete('/requests/{documentRequest}', [SuperadminRequestController::class, 'destroy'])->name('requests.destroy');
     
     // Document Types CRUD

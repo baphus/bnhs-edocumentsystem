@@ -14,6 +14,15 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
+    // Role constants
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_REGISTRAR = 'registrar';
+    public const ROLE_GUEST = 'guest';
+
+    // Status constants
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -73,7 +82,15 @@ class User extends Authenticatable
      */
     public function isSuperadmin(): bool
     {
-        return $this->role === 'superadmin';
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * Check if user is an admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
     }
 
     /**
@@ -81,15 +98,31 @@ class User extends Authenticatable
      */
     public function isRegistrar(): bool
     {
-        return $this->role === 'registrar';
+        return $this->role === self::ROLE_REGISTRAR;
     }
 
     /**
-     * Check if user is an admin (superadmin or registrar).
+     * Check if user is a guest (requester).
      */
-    public function isAdmin(): bool
+    public function isGuest(): bool
     {
-        return in_array($this->role, ['superadmin', 'registrar']);
+        return $this->role === self::ROLE_GUEST;
+    }
+
+    /**
+     * Check if user has admin or registrar role.
+     */
+    public function hasAdminAccess(): bool
+    {
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_REGISTRAR]);
+    }
+
+    /**
+     * Check if user is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
     }
 
     /**

@@ -28,3 +28,4 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
         </p>
     </div>
 </template>
+

@@ -119,7 +119,7 @@ onUnmounted(() => {
                         <!-- Dashboard -->
                         <SidebarLink
                             :href="route('dashboard')"
-                            :active="route().current('dashboard') || route().current('admin.dashboard') || route().current('admin.superadmin.dashboard')"
+                            :active="route().current('dashboard') || route().current('registrar.dashboard') || route().current('admin.dashboard')"
                             :collapsed="sidebarCollapsed"
                             icon="dashboard"
                         >
@@ -129,8 +129,8 @@ onUnmounted(() => {
                         <!-- Requests -->
                         <SidebarLink
                             v-if="isAdmin || isSuperadmin"
-                            :href="isSuperadmin ? route('admin.superadmin.requests.index') : route('admin.requests.index')"
-                            :active="route().current('admin.requests.index') || route().current('admin.requests.show') || route().current('admin.superadmin.requests.index')"
+                            :href="isSuperadmin ? route('admin.requests.index') : route('registrar.requests.index')"
+                            :active="route().current('registrar.requests.index') || route().current('registrar.requests.show') || route().current('admin.requests.index')"
                             :collapsed="sidebarCollapsed"
                             icon="requests"
                         >
@@ -140,8 +140,8 @@ onUnmounted(() => {
                         <!-- Users (Superadmin only) -->
                         <SidebarLink
                             v-if="isSuperadmin"
-                            :href="route('admin.superadmin.users.index')"
-                            :active="route().current('admin.superadmin.users.index') || route().current('admin.superadmin.users.show')"
+                            :href="route('admin.users.index')"
+                            :active="route().current('admin.users.index') || route().current('admin.users.show')"
                             :collapsed="sidebarCollapsed"
                             icon="users"
                         >
@@ -151,8 +151,8 @@ onUnmounted(() => {
                         <!-- Document Types (Superadmin only) -->
                         <SidebarLink
                             v-if="isSuperadmin"
-                            :href="route('admin.superadmin.document-types.index')"
-                            :active="route().current('admin.superadmin.document-types.index') || route().current('admin.superadmin.document-types.create') || route().current('admin.superadmin.document-types.edit')"
+                            :href="route('admin.document-types.index')"
+                            :active="route().current('admin.document-types.index') || route().current('admin.document-types.create') || route().current('admin.document-types.edit')"
                             :collapsed="sidebarCollapsed"
                             icon="document-types"
                         >
@@ -162,8 +162,8 @@ onUnmounted(() => {
                         <!-- System Logs (Superadmin only) -->
                         <SidebarLink
                             v-if="isSuperadmin"
-                            :href="route('admin.superadmin.logs.index')"
-                            :active="route().current('admin.superadmin.logs.index')"
+                            :href="route('admin.logs.index')"
+                            :active="route().current('admin.logs.index')"
                             :collapsed="sidebarCollapsed"
                             icon="logs"
                         >
@@ -173,8 +173,8 @@ onUnmounted(() => {
                         <!-- Settings (Superadmin only) -->
                         <SidebarLink
                             v-if="isSuperadmin"
-                            :href="route('admin.superadmin.settings.index')"
-                            :active="route().current('admin.superadmin.settings.index')"
+                            :href="route('admin.settings.index')"
+                            :active="route().current('admin.settings.index')"
                             :collapsed="sidebarCollapsed"
                             icon="settings"
                         >
@@ -372,3 +372,4 @@ onUnmounted(() => {
         </div>
     </div>
 </template>
+

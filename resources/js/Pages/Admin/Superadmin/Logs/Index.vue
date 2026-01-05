@@ -82,7 +82,7 @@ const formatDate = (date: string) => {
 
 const applyRequestFilters = () => {
     router.get(
-        route('admin.superadmin.logs.index'),
+        route('admin.logs.index'),
         {
             action: actionFilter.value || undefined,
             user_id: userIdFilter.value || undefined,
@@ -102,7 +102,7 @@ const applyRequestFilters = () => {
 
 const applyEmailFilters = () => {
     router.get(
-        route('admin.superadmin.logs.index'),
+        route('admin.logs.index'),
         {
             // Preserve request filters
             action: actionFilter.value || undefined,
@@ -475,3 +475,4 @@ const getActionColor = (action: string) => {
         </div>
     </AuthenticatedLayout>
 </template>
+

@@ -27,9 +27,9 @@ const categories = [
 
 const submit = () => {
     if (isEditing && props.documentType) {
-        form.put(route('admin.superadmin.document-types.update', props.documentType.id));
+        form.put(route('admin.document-types.update', props.documentType.id));
     } else {
-        form.post(route('admin.superadmin.document-types.store'));
+        form.post(route('admin.document-types.store'));
     }
 };
 </script>
@@ -41,7 +41,7 @@ const submit = () => {
         <template #header>
             <div class="flex items-center gap-4">
                 <Link
-                    :href="route('admin.superadmin.document-types.index')"
+                    :href="route('admin.document-types.index')"
                     class="text-gray-500 hover:text-gray-700"
                 >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,7 +156,7 @@ const submit = () => {
 
                         <div class="flex items-center justify-end gap-4 border-t border-gray-100 pt-6">
                             <Link
-                                :href="route('admin.superadmin.document-types.index')"
+                                :href="route('admin.document-types.index')"
                                 class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             >
                                 Cancel
@@ -175,4 +175,5 @@ const submit = () => {
         </div>
     </AuthenticatedLayout>
 </template>
+
 

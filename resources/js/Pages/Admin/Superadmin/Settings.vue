@@ -32,7 +32,7 @@ const submit = () => {
         reminder_interval_days: parseInt(data.reminder_interval_days as string, 10),
         max_reminder_count: parseInt(data.max_reminder_count as string, 10),
         otp_expiry_minutes: parseInt(data.otp_expiry_minutes as string, 10),
-    })).patch(route('admin.superadmin.settings.update'));
+    })).patch(route('admin.settings.update'));
 };
 </script>
 
@@ -159,4 +159,5 @@ const submit = () => {
         </div>
     </AuthenticatedLayout>
 </template>
+
 

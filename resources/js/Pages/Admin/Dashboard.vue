@@ -264,7 +264,7 @@ onMounted(() => {
                 <!-- Quick Actions -->
                 <div class="mt-8 grid gap-6 sm:grid-cols-2" :class="$page.props.auth.user.role === 'superadmin' ? 'lg:grid-cols-2' : 'lg:grid-cols-1'">
                     <Link
-                        :href="route('admin.requests.index')"
+                        :href="route('registrar.requests.index')"
                         class="flex items-center gap-4 rounded-xl bg-white p-6 shadow transition hover:shadow-md"
                     >
                         <div class="rounded-full bg-bnhs-blue-100 p-4">
@@ -299,7 +299,7 @@ onMounted(() => {
                 <div class="mt-8">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">Recent Requests</h3>
-                        <Link :href="route('admin.requests.index')" class="text-sm text-bnhs-blue hover:underline">
+                        <Link :href="route('registrar.requests.index')" class="text-sm text-bnhs-blue hover:underline">
                             View All →
                         </Link>
                     </div>
@@ -329,7 +329,7 @@ onMounted(() => {
                                 <tr v-for="request in recentRequests" :key="request.id" class="hover:bg-gray-50">
                                     <td class="whitespace-nowrap px-6 py-4">
                                         <Link
-                                            :href="route('admin.requests.show', request.id)"
+                                            :href="route('registrar.requests.show', request.id)"
                                             class="font-mono font-medium text-bnhs-blue hover:underline"
                                         >
                                             {{ request.tracking_id }}
@@ -363,3 +363,4 @@ onMounted(() => {
         </div>
     </AuthenticatedLayout>
 </template>
+

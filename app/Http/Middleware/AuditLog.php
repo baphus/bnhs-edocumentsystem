@@ -54,7 +54,7 @@ class AuditLog
     protected function logAudit(Request $request, Response $response): void
     {
         Log::channel('audit')->info('Action performed', [
-            'user_id' => auth()->id(),
+            'user_id' => auth()->user()?->id ?? null,
             'email' => auth()->user()?->email ?? 'anonymous',
             'method' => $request->method(),
             'path' => $request->path(),

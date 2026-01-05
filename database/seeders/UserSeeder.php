@@ -16,14 +16,14 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Superadmin
+        // Create Admin
         User::updateOrCreate(
-            ['email' => 'superadmin@bnhs.edu.ph'],
+            ['email' => 'admin@bnhs.edu.ph'],
             [
-                'name' => 'Super Admin',
+                'name' => 'System Administrator',
                 'password' => Hash::make('password'),
-                'role' => 'superadmin',
-                'status' => 'active',
+                'role' => User::ROLE_ADMIN,
+                'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => now(),
             ]
         );
@@ -34,8 +34,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Maria Santos',
                 'password' => Hash::make('password'),
-                'role' => 'registrar',
-                'status' => 'active',
+                'role' => User::ROLE_REGISTRAR,
+                'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => now(),
                 'last_login_at' => now()->subHours(2),
             ]
@@ -47,8 +47,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Juan Dela Cruz',
                 'password' => Hash::make('password'),
-                'role' => 'registrar',
-                'status' => 'active',
+                'role' => User::ROLE_REGISTRAR,
+                'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => now(),
                 'last_login_at' => now()->subDays(1),
             ]
@@ -59,8 +59,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Ana Reyes',
                 'password' => Hash::make('password'),
-                'role' => 'registrar',
-                'status' => 'active',
+                'role' => User::ROLE_REGISTRAR,
+                'status' => User::STATUS_ACTIVE,
                 'email_verified_at' => now(),
             ]
         );
@@ -71,8 +71,8 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Pedro Suspended',
                 'password' => Hash::make('password'),
-                'role' => 'registrar',
-                'status' => 'suspended',
+                'role' => User::ROLE_REGISTRAR,
+                'status' => User::STATUS_INACTIVE,
                 'email_verified_at' => now(),
             ]
         );

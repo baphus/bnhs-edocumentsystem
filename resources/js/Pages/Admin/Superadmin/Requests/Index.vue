@@ -8,7 +8,8 @@ import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import Modal from '@/Components/Modal.vue';
-import { ref, computed } from 'vue';
+import RequestsTable from '@/Components/RequestsTable.vue';
+import { ref, computed, watch } from 'vue';
 
 interface Request {
     id: number;
@@ -28,6 +29,11 @@ interface Props {
         links: any[];
         current_page: number;
         last_page: number;
+        from?: number;
+        to?: number;
+        total?: number;
+        prev_page_url?: string;
+        next_page_url?: string;
     };
     documentTypes: { id: number; name: string }[];
     statuses: string[];
@@ -40,6 +46,7 @@ interface Props {
         to_date?: string;
         sort_by?: string;
         sort_direction?: 'asc' | 'desc';
+        per_page?: number;
     };
     gradeLevels?: Record<string, string>;
     trackStrands?: Record<string, Record<string, string>>;
@@ -48,15 +55,10 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const search = ref(props.filters.search || '');
-const statusFilter = ref(props.filters.status || '');
-const documentTypeFilter = ref(props.filters.document_type || '');
-const fromDateFilter = ref(props.filters.from_date || '');
-const toDateFilter = ref(props.filters.to_date || '');
-const sortBy = ref(props.filters.sort_by || 'created_at');
-const sortDirection = ref<'asc' | 'desc'>(props.filters.sort_direction || 'desc');
-const selectedRequests = ref<number[]>([]);
 const showCreateModal = ref(false);
+const requestsTable = ref();
+const bulkStatus = ref('');
+const bulkNotes = ref('');
 
 const form = useForm({
     email: '',
@@ -99,7 +101,7 @@ const handlePhotoUpload = (e: Event) => {
 };
 
 const submitForm = () => {
-    form.post(route('admin.superadmin.requests.store'), {
+    form.post(route('admin.requests.store'), {
         forceFormData: true,
         onSuccess: () => {
             showCreateModal.value = false;
@@ -116,416 +118,287 @@ const closeModal = () => {
     form.clearErrors();
 };
 
-const applyFilters = () => {
-    router.get(route('admin.superadmin.requests.index'), {
-        search: search.value || undefined,
-        status: statusFilter.value || undefined,
-        document_type: documentTypeFilter.value || undefined,
-        from_date: fromDateFilter.value || undefined,
-        to_date: toDateFilter.value || undefined,
-        sort_by: sortBy.value || undefined,
-        sort_direction: sortDirection.value || undefined,
-    }, {
-        preserveState: true,
-        replace: true,
+const exportCsv = () => {
+    const params = new URLSearchParams();
+    Object.entries(props.filters).forEach(([key, value]) => {
+        if (value) params.append(key, String(value));
     });
+    const url = route('admin.requests.export');
+    window.location.href = params.toString() ? `${url}?${params.toString()}` : url;
 };
 
-const sortColumn = (column: string) => {
-    if (sortBy.value === column) {
-        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortBy.value = column;
-        sortDirection.value = 'asc';
-    }
-    applyFilters();
-};
-
-const toggleSelect = (requestId: number) => {
-    const index = selectedRequests.value.indexOf(requestId);
-    if (index > -1) {
-        selectedRequests.value.splice(index, 1);
-    } else {
-        selectedRequests.value.push(requestId);
-    }
-};
-
-const bulkAction = (action: string) => {
-    if (selectedRequests.value.length === 0) {
+const bulkUpdate = () => {
+    const selectedRequests = requestsTable.value?.selectedRequests || [];
+    if (selectedRequests.length === 0) {
         alert('Please select at least one request.');
         return;
     }
 
-    if (action === 'delete' && !confirm(`Delete ${selectedRequests.value.length} request(s)?`)) {
+    if (!bulkStatus.value && !bulkNotes.value) {
+        alert('Please select a status or enter notes to update.');
         return;
     }
 
-    if (action === 'status_update') {
-        const status = prompt('Enter new status (Pending, Verified, Processing, Ready, Completed, Rejected):');
-        if (!status) return;
-        router.post(route('admin.superadmin.requests.bulk'), {
-            action: 'status_update',
-            request_ids: selectedRequests.value,
-            status,
-        });
-    } else {
-        router.post(route('admin.superadmin.requests.bulk'), {
-            action,
-            request_ids: selectedRequests.value,
-        });
+    const updates: string[] = [];
+    if (bulkStatus.value) updates.push(`status to "${bulkStatus.value}"`);
+    if (bulkNotes.value) updates.push('notes');
+
+    const updateText = updates.join(' and ');
+    if (!confirm(`Update ${updateText} for ${selectedRequests.length} request(s)?`)) {
+        return;
     }
+
+    const action = bulkStatus.value && bulkNotes.value ? 'status_and_notes' : 
+                   bulkStatus.value ? 'status_update' : 'add_notes';
+
+    router.post(route('admin.requests.bulk'), {
+        action,
+        request_ids: selectedRequests,
+        status: bulkStatus.value || undefined,
+        notes: bulkNotes.value || undefined,
+    }, {
+        onSuccess: () => {
+            if (requestsTable.value) {
+                requestsTable.value.clearSelection();
+            }
+            bulkStatus.value = '';
+            bulkNotes.value = '';
+        },
+    });
 };
 
-const exportCsv = () => {
-    window.location.href = route('admin.superadmin.export.requests', props.filters);
+const bulkAction = (action: string) => {
+    const selectedRequests = requestsTable.value?.selectedRequests || [];
+    if (selectedRequests.length === 0) {
+        alert('Please select at least one request.');
+        return;
+    }
+
+    if (action === 'delete' && !confirm(`Delete ${selectedRequests.length} request(s)?`)) {
+        return;
+    }
+
+    router.post(route('admin.requests.bulk'), {
+        action,
+        request_ids: selectedRequests,
+    }, {
+        onSuccess: () => {
+            if (requestsTable.value) {
+                requestsTable.value.clearSelection();
+            }
+        },
+    });
 };
 
-const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-        Pending: 'bg-yellow-100 text-yellow-800',
-        Verified: 'bg-blue-100 text-blue-800',
-        Processing: 'bg-purple-100 text-purple-800',
-        Ready: 'bg-green-100 text-green-800',
-        Completed: 'bg-gray-100 text-gray-800',
-        Rejected: 'bg-red-100 text-red-800',
-    };
-    return colors[status] || colors['Pending'];
+const updateBulkStatus = () => {
+    const selectedRequests = requestsTable.value?.selectedRequests || [];
+    if (selectedRequests.length === 0) {
+        alert('Please select at least one request.');
+        return;
+    }
+
+    if (!bulkStatus.value) {
+        alert('Please select a status.');
+        return;
+    }
+
+    if (!confirm(`Update status to "${bulkStatus.value}" for ${selectedRequests.length} request(s)?`)) {
+        return;
+    }
+
+    router.post(route('admin.requests.bulk'), {
+        action: 'status_update',
+        request_ids: selectedRequests,
+        status: bulkStatus.value,
+    }, {
+        onSuccess: () => {
+            if (requestsTable.value) {
+                requestsTable.value.clearSelection();
+            }
+            bulkStatus.value = '';
+        },
+    });
+};
+
+const updateBulkNotes = () => {
+    const selectedRequests = requestsTable.value?.selectedRequests || [];
+    if (selectedRequests.length === 0) {
+        alert('Please select at least one request.');
+        return;
+    }
+
+    if (!bulkNotes.value) {
+        alert('Please enter notes.');
+        return;
+    }
+
+    router.post(route('admin.requests.bulk'), {
+        action: 'add_notes',
+        request_ids: selectedRequests,
+        notes: bulkNotes.value,
+    }, {
+        onSuccess: () => {
+            if (requestsTable.value) {
+                requestsTable.value.clearSelection();
+            }
+            bulkNotes.value = '';
+        },
+    });
+};
+
+const bulkExport = (selectedRequests: number[]) => {
+    if (selectedRequests.length === 0) {
+        alert('Please select at least one request.');
+        return;
+    }
+
+    const params = new URLSearchParams();
+    selectedRequests.forEach(id => params.append('ids[]', id.toString()));
+    const url = route('admin.requests.export');
+    window.location.href = `${url}?${params.toString()}`;
 };
 </script>
 
 <template>
-    <Head title="Request Command Center" />
+    <Head title="Manage Requests" />
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Request Command Center
-                </h2>
-                <div class="flex gap-2">
-                    <PrimaryButton @click="showCreateModal = true">
-                        Create Request
-                    </PrimaryButton>
-                    <PrimaryButton @click="exportCsv">
-                        Export CSV
-                    </PrimaryButton>
-                </div>
-            </div>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                Manage Requests
+            </h2>
         </template>
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <!-- Filters -->
-                <div class="mb-6 rounded-xl bg-white p-6 shadow">
-                    <div class="grid gap-4 sm:grid-cols-6">
-                        <div>
-                            <TextInput
-                                v-model="search"
-                                type="text"
-                                placeholder="Search..."
-                                class="w-full"
-                                @keyup.enter="applyFilters"
-                            />
-                        </div>
-                        <div>
+                <!-- Unified Requests Table -->
+                <RequestsTable
+                    ref="requestsTable"
+                    :requests="requests"
+                    :filters="filters"
+                    :statuses="statuses"
+                    :documentTypes="documentTypes"
+                    :isSuperadmin="true"
+                    routePrefix="registrar.requests"
+                    @export="exportCsv"
+                    @createRequest="showCreateModal = true"
+                >
+                    <!-- Bulk Actions Slot -->
+                    <template #bulk-actions="{ selectedRequests }">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium text-gray-700">
+                                {{ selectedRequests.length }} selected
+                            </span>
                             <select
-                                v-model="statusFilter"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                @change="applyFilters"
+                                v-model="bulkStatus"
+                                class="rounded-lg border-gray-300 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
                             >
-                                <option value="">All Status</option>
+                                <option value="">Update Status</option>
                                 <option v-for="status in statuses" :key="status" :value="status">
                                     {{ status }}
                                 </option>
                             </select>
-                        </div>
-                        <div>
-                            <select
-                                v-model="documentTypeFilter"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                @change="applyFilters"
+                            <input
+                                v-model="bulkNotes"
+                                type="text"
+                                placeholder="Add notes..."
+                                class="rounded-lg border-gray-300 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                            />
+                            <PrimaryButton 
+                                @click="bulkUpdate" 
+                                :disabled="!bulkStatus && !bulkNotes"
+                                class="whitespace-nowrap"
                             >
-                                <option value="">All Document Types</option>
-                                <option v-for="dt in documentTypes" :key="dt.id" :value="dt.id">
-                                    {{ dt.name }}
-                                </option>
-                            </select>
-                        </div>
-                        <div>
-                            <input
-                                type="date"
-                                v-model="fromDateFilter"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                @change="applyFilters"
-                                placeholder="From Date"
-                            />
-                        </div>
-                        <div>
-                            <input
-                                type="date"
-                                v-model="toDateFilter"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                @change="applyFilters"
-                                placeholder="To Date"
-                            />
-                        </div>
-                        <div>
-                            <PrimaryButton @click="applyFilters" class="w-full">
-                                Apply Filters
+                                Apply
                             </PrimaryButton>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bulk Actions -->
-                <div v-if="selectedRequests.length > 0" class="mb-4 rounded-lg bg-bnhs-blue-50 p-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-bnhs-blue">
-                            {{ selectedRequests.length }} request(s) selected
-                        </span>
-                        <div class="flex gap-2">
-                            <PrimaryButton @click="bulkAction('status_update')" size="sm">
-                                Update Status
-                            </PrimaryButton>
-                            <PrimaryButton @click="bulkAction('resend_otp')" size="sm">
-                                Resend OTP
-                            </PrimaryButton>
-                            <DangerButton @click="bulkAction('delete')" size="sm">
+                            <DangerButton @click="bulkAction('delete')" class="whitespace-nowrap">
                                 Delete
                             </DangerButton>
+                            <SecondaryButton @click="bulkExport(selectedRequests)" class="whitespace-nowrap">
+                                Export
+                            </SecondaryButton>
+                            <button
+                                @click="requestsTable.clearSelection(); bulkStatus = ''; bulkNotes = ''"
+                                class="ml-2 text-gray-400 hover:text-gray-600"
+                            >
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
-                    </div>
-                </div>
+                    </template>
 
-                <!-- Requests Table -->
-                <div class="overflow-hidden rounded-xl bg-white shadow">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left">
-                                    <input
-                                        type="checkbox"
-                                        :checked="selectedRequests.length === requests.data.length && requests.data.length > 0"
-                                        @change="() => selectedRequests = selectedRequests.length === requests.data.length ? [] : requests.data.map(r => r.id)"
-                                        class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue"
-                                    />
-                                </th>
-                                <th 
-                                    @click="sortColumn('tracking_id')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                    <!-- Table Rows Slot -->
+                    <template #table-rows="{ columnVisibility, isSelected, toggleSelect, getStatusColor }">
+                        <tr v-for="request in requests.data" :key="request.id" class="hover:bg-gray-50">
+                            <td v-if="columnVisibility.checkbox" class="whitespace-nowrap px-6 py-4">
+                                <input
+                                    type="checkbox"
+                                    :checked="isSelected(request.id)"
+                                    @change="toggleSelect(request.id)"
+                                    class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue"
+                                />
+                            </td>
+                            <td v-if="columnVisibility.tracking_id" class="whitespace-nowrap px-6 py-4">
+                                <Link
+                                    :href="route('admin.requests.show', { id: request.id, ...filters })"
+                                    class="font-mono text-sm font-medium text-bnhs-blue hover:underline"
                                 >
-                                    <div class="flex items-center gap-1">
-                                        Tracking ID
-                                        <span v-if="sortBy === 'tracking_id'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('last_name')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                    {{ request.tracking_id }}
+                                </Link>
+                            </td>
+                            <td v-if="columnVisibility.requester" class="px-6 py-4 text-sm text-gray-900">
+                                <p class="font-medium">{{ request.full_name }}</p>
+                                <p class="text-sm text-gray-500">{{ request.email }}</p>
+                            </td>
+                            <td v-if="columnVisibility.lrn" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 font-mono">
+                                {{ request.lrn }}
+                            </td>
+                            <td v-if="columnVisibility.email" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                {{ request.email }}
+                            </td>
+                            <td v-if="columnVisibility.document" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                {{ request.document_type }}
+                            </td>
+                            <td v-if="columnVisibility.status" class="whitespace-nowrap px-6 py-4">
+                                <span
+                                    :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]"
                                 >
-                                    <div class="flex items-center gap-1">
-                                        Requester
-                                        <span v-if="sortBy === 'last_name'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('document_type_id')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                    {{ request.status }}
+                                </span>
+                            </td>
+                            <td v-if="columnVisibility.otp_verified" class="whitespace-nowrap px-6 py-4">
+                                <span
+                                    :class="[
+                                        'rounded-full px-2 py-1 text-xs font-medium',
+                                        request.otp_verified
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-red-100 text-red-800',
+                                    ]"
                                 >
-                                    <div class="flex items-center gap-1">
-                                        Document
-                                        <span v-if="sortBy === 'document_type_id'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('status')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                    {{ request.otp_verified ? 'Yes' : 'No' }}
+                                </span>
+                            </td>
+                            <td v-if="columnVisibility.date" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                {{ new Date(request.created_at).toLocaleDateString() }}
+                            </td>
+                            <td v-if="columnVisibility.actions" class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                                <button
+                                    @click="router.visit(route('admin.requests.show', { id: request.id, ...filters }))"
+                                    class="text-bnhs-blue hover:text-bnhs-blue-600 mr-3"
                                 >
-                                    <div class="flex items-center gap-1">
-                                        Status
-                                        <span v-if="sortBy === 'status'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('otp_verified')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
+                                    Edit
+                                </button>
+                                <Link
+                                    :href="route('admin.requests.show', { id: request.id, ...filters })"
+                                    class="text-bnhs-blue hover:text-bnhs-blue-600"
                                 >
-                                    <div class="flex items-center gap-1">
-                                        OTP Verified
-                                        <span v-if="sortBy === 'otp_verified'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('created_at')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        Date
-                                        <span v-if="sortBy === 'created_at'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            <tr v-for="request in requests.data" :key="request.id" class="hover:bg-gray-50">
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <input
-                                        type="checkbox"
-                                        :checked="selectedRequests.includes(request.id)"
-                                        @change="toggleSelect(request.id)"
-                                        class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue"
-                                    />
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <Link
-                                        :href="route('admin.requests.show', request.id)"
-                                        class="font-mono text-sm font-medium text-bnhs-blue hover:underline"
-                                    >
-                                        {{ request.tracking_id }}
-                                    </Link>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                                    {{ request.full_name }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                    {{ request.document_type }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <span
-                                        :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]"
-                                    >
-                                        {{ request.status }}
-                                    </span>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <span
-                                        :class="[
-                                            'rounded-full px-2 py-1 text-xs font-medium',
-                                            request.otp_verified
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-red-100 text-red-800',
-                                        ]"
-                                    >
-                                        {{ request.otp_verified ? 'Yes' : 'No' }}
-                                    </span>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                    {{ new Date(request.created_at).toLocaleDateString() }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                                    <Link
-                                        :href="route('admin.requests.show', request.id)"
-                                        class="text-bnhs-blue hover:text-bnhs-blue-600"
-                                    >
-                                        View
-                                    </Link>
-                                </td>
-                            </tr>
-                            <tr v-if="requests.data.length === 0">
-                                <td colspan="8" class="px-6 py-8 text-center text-gray-500">
-                                    No requests found
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div v-if="requests.last_page > 1" class="mt-4 flex items-center justify-between">
-                    <div class="text-sm text-gray-700">
-                        Showing page {{ requests.current_page }} of {{ requests.last_page }}
-                    </div>
-                    <div class="flex gap-2">
-                        <Link
-                            v-for="link in requests.links"
-                            :key="link.label"
-                            :href="link.url || '#'"
-                            :class="[
-                                'px-3 py-2 text-sm rounded-md',
-                                link.active
-                                    ? 'bg-bnhs-blue text-white'
-                                    : 'bg-white text-gray-700 hover:bg-gray-50',
-                                !link.url ? 'opacity-50 cursor-not-allowed' : '',
-                            ]"
-                            v-html="link.label"
-                        />
-                    </div>
-                </div>
+                                    View
+                                </Link>
+                            </td>
+                        </tr>
+                    </template>
+                </RequestsTable>
             </div>
         </div>
 
@@ -754,4 +627,5 @@ const getStatusColor = (status: string) => {
         </Modal>
     </AuthenticatedLayout>
 </template>
+
 

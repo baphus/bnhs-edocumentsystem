@@ -23,11 +23,18 @@ class RoleMiddleware
         $userRole = $request->user()->role;
 
         foreach ($roles as $role) {
-            // Handle 'admin' as a special role that matches both superadmin and registrar
-            if ($role === 'admin' && in_array($userRole, ['superadmin', 'registrar'])) {
+            // 'admin' role in middleware matches both admin and registrar
+            // This allows shared routes for both roles
+            if ($role === 'admin' && in_array($userRole, ['admin', 'registrar'])) {
                 return $next($request);
             }
 
+            // 'superadmin' middleware alias for backward compatibility
+            if ($role === 'superadmin' && $userRole === 'admin') {
+                return $next($request);
+            }
+
+            // Direct role match
             if ($userRole === $role) {
                 return $next($request);
             }

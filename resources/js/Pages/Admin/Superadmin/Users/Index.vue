@@ -38,7 +38,7 @@ const statusFilter = ref(props.filters.status || '');
 const selectedUsers = ref<number[]>([]);
 
 const applyFilters = () => {
-    router.get(route('admin.superadmin.users.index'), {
+    router.get(route('admin.users.index'), {
         search: search.value || undefined,
         role: roleFilter.value || undefined,
         status: statusFilter.value || undefined,
@@ -67,14 +67,14 @@ const toggleSelectAll = () => {
 
 const impersonate = (userId: number) => {
     if (confirm('Are you sure you want to impersonate this user?')) {
-        router.post(route('admin.superadmin.users.impersonate', userId));
+        router.post(route('admin.users.impersonate', userId));
     }
 };
 
 const resetPassword = (userId: number) => {
     const password = prompt('Enter new password (min 8 characters):');
     if (password && password.length >= 8) {
-        router.post(route('admin.superadmin.users.reset-password', userId), {
+        router.post(route('admin.users.reset-password', userId), {
             password,
             password_confirmation: password,
         });
@@ -87,7 +87,7 @@ const bulkUpdateStatus = (status: string) => {
         return;
     }
     if (confirm(`Update ${selectedUsers.value.length} users to ${status}?`)) {
-        router.post(route('admin.superadmin.users.bulk-status'), {
+        router.post(route('admin.users.bulk-status'), {
             user_ids: selectedUsers.value,
             status,
         });
@@ -264,7 +264,7 @@ const bulkUpdateStatus = (status: string) => {
                                             🔑
                                         </button>
                                         <Link
-                                            :href="route('admin.superadmin.users.show', user.id)"
+                                            :href="route('admin.users.show', user.id)"
                                             class="text-green-600 hover:text-green-700"
                                         >
                                             View
@@ -306,4 +306,5 @@ const bulkUpdateStatus = (status: string) => {
         </div>
     </AuthenticatedLayout>
 </template>
+
 

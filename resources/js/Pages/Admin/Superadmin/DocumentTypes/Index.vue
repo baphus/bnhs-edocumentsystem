@@ -23,7 +23,7 @@ const confirmDelete = (documentType: DocumentType) => {
 
 const deleteDocumentType = () => {
     if (documentTypeToDelete.value) {
-        router.delete(route('admin.superadmin.document-types.destroy', documentTypeToDelete.value.id), {
+        router.delete(route('admin.document-types.destroy', documentTypeToDelete.value.id), {
             onSuccess: () => {
                 showDeleteModal.value = false;
                 documentTypeToDelete.value = null;
@@ -60,7 +60,7 @@ const formatDate = (date: string) => {
                     Document Types
                 </h2>
                 <Link
-                    :href="route('admin.superadmin.document-types.create')"
+                    :href="route('admin.document-types.create')"
                     class="rounded-md bg-bnhs-blue px-4 py-2 text-sm font-medium text-white hover:bg-bnhs-blue-600"
                 >
                     Add Document Type
@@ -146,7 +146,7 @@ const formatDate = (date: string) => {
                                 <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium" :class="{ 'pb-5': index === documentTypes.length - 1 }">
                                     <div class="flex justify-end gap-2">
                                         <Link
-                                            :href="route('admin.superadmin.document-types.edit', documentType.id)"
+                                            :href="route('admin.document-types.edit', documentType.id)"
                                             class="text-bnhs-blue hover:text-bnhs-blue-600"
                                         >
                                             Edit
@@ -198,4 +198,5 @@ const formatDate = (date: string) => {
         </div>
     </AuthenticatedLayout>
 </template>
+
 

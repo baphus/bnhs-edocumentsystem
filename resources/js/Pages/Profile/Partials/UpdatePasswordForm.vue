@@ -122,3 +122,4 @@ const updatePassword = () => {
         </form>
     </section>
 </template>
+

@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { ref, watch, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
+import DangerButton from '@/Components/DangerButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import Modal from '@/Components/Modal.vue';
+import RequestsTable from '@/Components/RequestsTable.vue';
 import { DocumentRequest, PaginatedData } from '@/types';
 
 const page = usePage();
@@ -24,6 +26,7 @@ const props = defineProps<{
         to_date?: string;
         sort_by?: string;
         sort_direction?: 'asc' | 'desc';
+        per_page?: number;
     };
     documentTypes: Array<{ id: number; name: string }>;
     gradeLevels?: Record<string, string>;
@@ -31,27 +34,29 @@ const props = defineProps<{
     schoolYears?: Record<string, string>;
 }>();
 
-const search = ref(props.filters.search || '');
-const statusFilter = ref(props.filters.status || '');
-const documentTypeFilter = ref(props.filters.document_type_id || '');
-const fromDateFilter = ref(props.filters.from_date || '');
-const toDateFilter = ref(props.filters.to_date || '');
-const sortBy = ref(props.filters.sort_by || 'created_at');
-const sortDirection = ref<'asc' | 'desc'>(props.filters.sort_direction || 'desc');
 const showCreateModal = ref(false);
-const selectedRequests = ref<number[]>([]);
+const requestsTable = ref();
 const bulkStatus = ref('');
 const bulkNotes = ref('');
 const editingRequest = ref<number | null>(null);
 const editForm = ref<Record<number, {
-    first_name: string;
-    last_name: string;
+    first_name: string;    middle_name: string;    last_name: string;
     email: string;
     lrn: string;
     status: string;
 }>>({});
 
 const statuses = ['Pending', 'Verified', 'Processing', 'Ready', 'Completed', 'Rejected'];
+
+onMounted(() => {
+    editingRequest.value = null;
+    editForm.value = {};
+});
+
+// Watch requests to ensure editing state is cleared when data changes
+watch(() => props.requests.data, () => {
+    editingRequest.value = null;
+}, { deep: true });
 
 const form = useForm({
     email: '',
@@ -94,7 +99,7 @@ const handlePhotoUpload = (e: Event) => {
 };
 
 const submitForm = () => {
-    form.post(route('admin.requests.store'), {
+    form.post(route('registrar.requests.store'), {
         forceFormData: true,
         onSuccess: () => {
             showCreateModal.value = false;
@@ -111,100 +116,18 @@ const closeModal = () => {
     form.clearErrors();
 };
 
-const applyFilters = () => {
-    router.get(route('admin.requests.index'), {
-        search: search.value || undefined,
-        status: statusFilter.value || undefined,
-        document_type_id: documentTypeFilter.value || undefined,
-        from_date: fromDateFilter.value || undefined,
-        to_date: toDateFilter.value || undefined,
-        sort_by: sortBy.value || undefined,
-        sort_direction: sortDirection.value || undefined,
-    }, {
-        preserveState: true,
-        replace: true,
+const exportCsv = () => {
+    const params = new URLSearchParams();
+    Object.entries(props.filters).forEach(([key, value]) => {
+        if (value) params.append(key, String(value));
     });
+    const url = route('registrar.requests.export');
+    window.location.href = params.toString() ? `${url}?${params.toString()}` : url;
 };
-
-const sortColumn = (column: string) => {
-    if (sortBy.value === column) {
-        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortBy.value = column;
-        sortDirection.value = 'asc';
-    }
-    applyFilters();
-};
-
-// Debounced search
-let searchTimeout: ReturnType<typeof setTimeout>;
-watch(search, () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(applyFilters, 300);
-});
-
-watch([statusFilter, documentTypeFilter, fromDateFilter, toDateFilter], applyFilters);
-
-const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-        'Pending': 'bg-yellow-100 text-yellow-800',
-        'Verified': 'bg-blue-100 text-blue-800',
-        'Processing': 'bg-purple-100 text-purple-800',
-        'Ready': 'bg-green-100 text-green-800',
-        'Completed': 'bg-gray-100 text-gray-800',
-        'Rejected': 'bg-red-100 text-red-800',
-    };
-    return colors[status] || colors['Pending'];
-};
-
-const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-PH', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-    });
-};
-
-const clearFilters = () => {
-    search.value = '';
-    statusFilter.value = '';
-    documentTypeFilter.value = '';
-    fromDateFilter.value = '';
-    toDateFilter.value = '';
-    sortBy.value = 'created_at';
-    sortDirection.value = 'desc';
-    router.get(route('admin.requests.index'));
-};
-
-const toggleSelect = (requestId: number) => {
-    const index = selectedRequests.value.indexOf(requestId);
-    if (index > -1) {
-        selectedRequests.value.splice(index, 1);
-    } else {
-        selectedRequests.value.push(requestId);
-    }
-};
-
-const toggleSelectAll = () => {
-    if (selectedRequests.value.length === props.requests.data.length) {
-        selectedRequests.value = [];
-    } else {
-        selectedRequests.value = props.requests.data.map((r: DocumentRequest) => r.id);
-    }
-};
-
-const isSelected = (requestId: number) => {
-    return selectedRequests.value.includes(requestId);
-};
-
-const isAllSelected = computed(() => {
-    return props.requests.data.length > 0 && selectedRequests.value.length === props.requests.data.length;
-});
 
 const bulkUpdate = () => {
-    if (selectedRequests.value.length === 0) {
+    const selectedRequests = requestsTable.value?.selectedRequests || [];
+    if (selectedRequests.length === 0) {
         alert('Please select at least one request.');
         return;
     }
@@ -220,21 +143,57 @@ const bulkUpdate = () => {
     if (bulkNotes.value) updates.push('notes');
 
     const updateText = updates.join(' and ');
-    if (!confirm(`Update ${updateText} for ${selectedRequests.value.length} request(s)?`)) {
+    if (!confirm(`Update ${updateText} for ${selectedRequests.length} request(s)?`)) {
         return;
     }
 
-    router.post(route('admin.requests.bulk-update'), {
-        request_ids: selectedRequests.value,
+    router.post(route('registrar.requests.bulk-update'), {
+        request_ids: selectedRequests,
         status: bulkStatus.value || undefined,
         admin_notes: bulkNotes.value || undefined,
     }, {
         onSuccess: () => {
-            selectedRequests.value = [];
+            if (requestsTable.value) {
+                requestsTable.value.clearSelection();
+            }
             bulkStatus.value = '';
             bulkNotes.value = '';
         },
     });
+};
+
+const bulkDelete = () => {
+    const selectedRequests = requestsTable.value?.selectedRequests || [];
+    if (selectedRequests.length === 0) {
+        alert('Please select at least one request.');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedRequests.length} request(s)? This action cannot be undone.`)) {
+        return;
+    }
+
+    router.post(route('registrar.requests.bulk-delete'), {
+        request_ids: selectedRequests,
+    }, {
+        onSuccess: () => {
+            if (requestsTable.value) {
+                requestsTable.value.clearSelection();
+            }
+        },
+    });
+};
+
+const bulkExport = (selectedRequests: number[]) => {
+    if (selectedRequests.length === 0) {
+        alert('Please select at least one request.');
+        return;
+    }
+
+    const params = new URLSearchParams();
+    selectedRequests.forEach(id => params.append('ids[]', id.toString()));
+    const url = route('registrar.requests.export');
+    window.location.href = `${url}?${params.toString()}`;
 };
 
 const startEditing = (request: DocumentRequest) => {
@@ -242,6 +201,7 @@ const startEditing = (request: DocumentRequest) => {
     if (!editForm.value[request.id]) {
         editForm.value[request.id] = {
             first_name: request.first_name || '',
+            middle_name: request.middle_name || '',
             last_name: request.last_name || '',
             email: request.student_email || '',
             lrn: request.lrn || '',
@@ -259,7 +219,7 @@ const saveEdit = (requestId: number) => {
     const form = editForm.value[requestId];
     if (!form) return;
 
-    router.patch(route('admin.requests.update', requestId), form, {
+    router.patch(route('registrar.requests.update', requestId), form, {
         preserveScroll: true,
         onSuccess: () => {
             editingRequest.value = null;
@@ -267,6 +227,7 @@ const saveEdit = (requestId: number) => {
         },
     });
 };
+
 </script>
 
 <template>
@@ -274,444 +235,199 @@ const saveEdit = (requestId: number) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Manage Requests
-                </h2>
-                <PrimaryButton @click="showCreateModal = true">
-                    Create Request
-                </PrimaryButton>
-            </div>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                Manage Requests
+            </h2>
         </template>
 
         <div class="py-8 pb-12">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <!-- Filters -->
-                <div class="rounded-xl bg-white p-6 shadow">
-                    <div class="grid gap-4 sm:grid-cols-6">
-                        <div class="sm:col-span-2">
-                            <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
-                            <input
-                                id="search"
-                                type="text"
-                                v-model="search"
-                                placeholder="Search by tracking ID, name, or LRN..."
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                            />
-                        </div>
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                <!-- Unified Requests Table -->
+                <RequestsTable
+                    ref="requestsTable"
+                    :requests="requests"
+                    :filters="filters"
+                    :statuses="statuses"
+                    :documentTypes="documentTypes"
+                    :isSuperadmin="isSuperadmin"
+                    routePrefix="registrar.requests"
+                    @export="exportCsv"
+                    @createRequest="showCreateModal = true"
+                >
+                    <!-- Bulk Actions Slot -->
+                    <template #bulk-actions="{ selectedRequests }">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium text-gray-700">
+                                {{ selectedRequests.length }} selected
+                            </span>
                             <select
-                                id="status"
-                                v-model="statusFilter"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                v-model="bulkStatus"
+                                class="rounded-lg border-gray-300 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
                             >
-                                <option value="">All Statuses</option>
+                                <option value="">Update Status</option>
                                 <option v-for="status in statuses" :key="status" :value="status">
                                     {{ status }}
                                 </option>
                             </select>
-                        </div>
-                        <div>
-                            <label for="docType" class="block text-sm font-medium text-gray-700">Document Type</label>
-                            <select
-                                id="docType"
-                                v-model="documentTypeFilter"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                            <input
+                                v-model="bulkNotes"
+                                type="text"
+                                placeholder="Add notes..."
+                                class="rounded-lg border-gray-300 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                            />
+                            <PrimaryButton 
+                                @click="bulkUpdate" 
+                                :disabled="!bulkStatus && !bulkNotes"
+                                class="whitespace-nowrap"
                             >
-                                <option value="">All Types</option>
-                                <option v-for="docType in documentTypes" :key="docType.id" :value="docType.id">
-                                    {{ docType.name }}
-                                </option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="fromDate" class="block text-sm font-medium text-gray-700">From Date</label>
-                            <input
-                                id="fromDate"
-                                type="date"
-                                v-model="fromDateFilter"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                            />
-                        </div>
-                        <div>
-                            <label for="toDate" class="block text-sm font-medium text-gray-700">To Date</label>
-                            <input
-                                id="toDate"
-                                type="date"
-                                v-model="toDateFilter"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                            />
-                        </div>
-                    </div>
-                    <div class="mt-4 flex items-center justify-between">
-                        <p class="text-sm text-gray-500">
-                            Showing {{ requests.data.length }} of {{ requests.total }} requests
-                        </p>
-                        <button
-                            v-if="filters.search || filters.status || filters.document_type_id || filters.from_date || filters.to_date"
-                            @click="clearFilters"
-                            class="text-sm text-bnhs-blue hover:underline"
-                        >
-                            Clear Filters
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Bulk Actions -->
-                <div v-if="selectedRequests.length > 0" class="mt-6 rounded-lg bg-bnhs-blue-50 p-4">
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-bnhs-blue">
-                                {{ selectedRequests.length }} request(s) selected
-                            </span>
+                                Apply
+                            </PrimaryButton>
+                            <DangerButton @click="bulkDelete" class="whitespace-nowrap">
+                                Delete
+                            </DangerButton>
+                            <SecondaryButton @click="bulkExport(selectedRequests)" class="whitespace-nowrap">
+                                Export
+                            </SecondaryButton>
                             <button
-                                @click="selectedRequests = []; bulkStatus = ''; bulkNotes = ''"
-                                class="text-sm text-gray-600 hover:text-gray-800"
+                                @click="requestsTable.clearSelection(); bulkStatus = ''; bulkNotes = ''"
+                                class="ml-2 text-gray-400 hover:text-gray-600"
                             >
-                                Clear Selection
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                             </button>
                         </div>
-                        
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <!-- Bulk Status Update -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Update Status</label>
-                                <select
-                                    v-model="bulkStatus"
-                                    class="w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                    </template>
+
+                    <!-- Table Rows Slot -->
+                    <template #table-rows="{ columnVisibility, isSelected, toggleSelect, getStatusColor, formatDate }">
+                        <tr v-for="request in requests.data" :key="request.id" class="hover:bg-gray-50">
+                            <td v-if="columnVisibility.checkbox" class="whitespace-nowrap px-6 py-4">
+                                <input
+                                    type="checkbox"
+                                    :checked="isSelected(request.id)"
+                                    @change="toggleSelect(request.id)"
+                                    class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue"
+                                />
+                            </td>
+                            <td v-if="columnVisibility.tracking_id" class="whitespace-nowrap px-6 py-4">
+                                <Link
+                                    :href="route('registrar.requests.show', { id: request.id, ...filters })"
+                                    class="font-mono font-medium text-bnhs-blue hover:underline"
                                 >
-                                    <option value="">Select Status</option>
+                                    {{ request.tracking_id }}
+                                </Link>
+                            </td>
+                            <td v-if="columnVisibility.requester" class="px-6 py-4">
+                                <div v-if="!isSuperadmin || editingRequest !== request.id">
+                                    <p class="font-medium text-gray-900">
+                                        {{ request.first_name }} {{ request.middle_name ? request.middle_name.charAt(0) + '.' : '' }} {{ request.last_name }}
+                                    </p>
+                                    <p class="text-sm text-gray-500">{{ request.student_email }}</p>
+                                </div>
+                                <div v-else class="space-y-1">
+                                    <input
+                                        v-model="editForm[request.id].first_name"
+                                        type="text"
+                                        class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        placeholder="First Name"
+                                    />
+                                    <input
+                                        v-model="editForm[request.id].middle_name"
+                                        type="text"
+                                        class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        placeholder="Middle Name"
+                                    />
+                                    <input
+                                        v-model="editForm[request.id].last_name"
+                                        type="text"
+                                        class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        placeholder="Last Name"
+                                    />
+                                </div>
+                            </td>
+                            <td v-if="columnVisibility.lrn" class="whitespace-nowrap px-6 py-4 font-mono text-sm text-gray-500">
+                                <span v-if="!isSuperadmin || editingRequest !== request.id">{{ request.lrn }}</span>
+                                <input
+                                    v-else
+                                    v-model="editForm[request.id].lrn"
+                                    type="text"
+                                    maxlength="12"
+                                    class="w-24 rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    placeholder="LRN"
+                                />
+                            </td>
+                            <td v-if="columnVisibility.email" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                <span v-if="!isSuperadmin || editingRequest !== request.id">{{ request.student_email }}</span>
+                                <input
+                                    v-else
+                                    v-model="editForm[request.id].email"
+                                    type="email"
+                                    class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    placeholder="Email"
+                                />
+                            </td>
+                            <td v-if="columnVisibility.document" class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                                {{ request.document_type?.name }}
+                            </td>
+                            <td v-if="columnVisibility.status" class="whitespace-nowrap px-6 py-4">
+                                <span v-if="!isSuperadmin || editingRequest !== request.id" :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]">
+                                    {{ request.status }}
+                                </span>
+                                <select
+                                    v-else
+                                    v-model="editForm[request.id].status"
+                                    class="rounded border-gray-300 px-2 py-1 text-xs focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                >
                                     <option v-for="status in statuses" :key="status" :value="status">
                                         {{ status }}
                                     </option>
                                 </select>
-                            </div>
-                            
-                            <!-- Bulk Notes Update -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Update Notes</label>
-                                <textarea
-                                    v-model="bulkNotes"
-                                    placeholder="Add notes for selected requests..."
-                                    rows="2"
-                                    class="w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue text-sm"
-                                ></textarea>
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-end">
-                            <PrimaryButton 
-                                @click="bulkUpdate" 
-                                :disabled="!bulkStatus && !bulkNotes"
-                            >
-                                Apply Changes
-                            </PrimaryButton>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Requests Table -->
-                <div class="mt-6 overflow-hidden rounded-xl bg-white shadow">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="w-12 px-6 py-3">
-                                    <input
-                                        type="checkbox"
-                                        :checked="isAllSelected"
-                                        @change="toggleSelectAll"
-                                        class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue"
-                                    />
-                                </th>
-                                <th 
-                                    @click="sortColumn('tracking_id')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        Tracking ID
-                                        <span v-if="sortBy === 'tracking_id'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('last_name')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        Requester
-                                        <span v-if="sortBy === 'last_name'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('lrn')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        LRN
-                                        <span v-if="sortBy === 'lrn'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('document_type_id')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        Document
-                                        <span v-if="sortBy === 'document_type_id'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('status')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        Status
-                                        <span v-if="sortBy === 'status'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th 
-                                    @click="sortColumn('created_at')"
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:bg-gray-100 select-none"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        Date
-                                        <span v-if="sortBy === 'created_at'" class="text-bnhs-blue">
-                                            <svg v-if="sortDirection === 'asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </span>
-                                        <span v-else class="text-gray-300">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </th>
-                                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            <tr v-for="request in requests.data" :key="request.id" class="hover:bg-gray-50">
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <input
-                                        type="checkbox"
-                                        :checked="isSelected(request.id)"
-                                        @change="toggleSelect(request.id)"
-                                        class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue"
-                                    />
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
+                            </td>
+                            <td v-if="columnVisibility.date" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                {{ formatDate(request.created_at) }}
+                            </td>
+                            <td v-if="columnVisibility.actions" class="whitespace-nowrap px-6 py-4 text-right">
+                                <div v-if="isSuperadmin && editingRequest !== request.id" class="flex justify-end gap-2">
+                                    <button
+                                        @click="startEditing(request)"
+                                        class="text-bnhs-blue hover:underline text-sm"
+                                    >
+                                        Edit
+                                    </button>
                                     <Link
-                                        :href="route('admin.requests.show', request.id)"
-                                        class="font-mono font-medium text-bnhs-blue hover:underline"
+                                        :href="route('registrar.requests.show', { id: request.id, ...filters })"
+                                        class="text-bnhs-blue hover:underline text-sm"
                                     >
-                                        {{ request.tracking_id }}
-                                    </Link>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <div v-if="!isSuperadmin || editingRequest !== request.id">
-                                        <p class="font-medium text-gray-900">
-                                            {{ request.first_name }} {{ request.middle_name }} {{ request.last_name }}
-                                        </p>
-                                        <p class="text-sm text-gray-500">{{ request.student_email }}</p>
-                                    </div>
-                                    <div v-else class="space-y-1">
-                                        <input
-                                            v-model="editForm[request.id].first_name"
-                                            type="text"
-                                            class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                            placeholder="First Name"
-                                        />
-                                        <input
-                                            v-model="editForm[request.id].last_name"
-                                            type="text"
-                                            class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                            placeholder="Last Name"
-                                        />
-                                        <input
-                                            v-model="editForm[request.id].email"
-                                            type="email"
-                                            class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                            placeholder="Email"
-                                        />
-                                    </div>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 font-mono text-sm text-gray-500">
-                                    <span v-if="!isSuperadmin || editingRequest !== request.id">{{ request.lrn }}</span>
-                                    <input
-                                        v-else
-                                        v-model="editForm[request.id].lrn"
-                                        type="text"
-                                        maxlength="12"
-                                        class="w-24 rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                        placeholder="LRN"
-                                    />
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                                    {{ request.document_type?.name }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    <span v-if="!isSuperadmin || editingRequest !== request.id" :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]">
-                                        {{ request.status }}
-                                    </span>
-                                    <select
-                                        v-else
-                                        v-model="editForm[request.id].status"
-                                        class="rounded border-gray-300 px-2 py-1 text-xs focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                    >
-                                        <option v-for="status in statuses" :key="status" :value="status">
-                                            {{ status }}
-                                        </option>
-                                    </select>
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                    {{ formatDate(request.created_at) }}
-                                </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-right">
-                                    <div v-if="!isSuperadmin" class="flex justify-end">
-                                        <Link
-                                            :href="route('admin.requests.show', request.id)"
-                                            class="text-bnhs-blue hover:underline"
-                                        >
-                                            View
-                                        </Link>
-                                    </div>
-                                    <div v-else-if="editingRequest !== request.id" class="flex justify-end gap-2">
-                                        <button
-                                            @click="startEditing(request)"
-                                            class="text-bnhs-blue hover:underline text-sm"
-                                        >
-                                            Edit
-                                        </button>
-                                        <Link
-                                            :href="route('admin.requests.show', request.id)"
-                                            class="text-bnhs-blue hover:underline text-sm"
-                                        >
-                                            View
-                                        </Link>
-                                    </div>
-                                    <div v-else class="flex justify-end gap-2">
-                                        <button
-                                            @click="saveEdit(request.id)"
-                                            class="text-green-600 hover:text-green-800 text-sm font-medium"
-                                        >
-                                            Save
-                                        </button>
-                                        <button
-                                            @click="cancelEditing(request.id)"
-                                            class="text-gray-600 hover:text-gray-800 text-sm"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-if="requests.data.length === 0">
-                                <td colspan="8" class="px-6 py-12 text-center text-gray-500">
-                                    <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    <p class="mt-4 font-medium">No requests found</p>
-                                    <p class="mt-1 text-sm">Try adjusting your search or filters</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                        </table>
-
-                        <!-- Pagination -->
-                        <div v-if="requests.last_page > 1" class="border-t border-gray-200 bg-gray-50 px-6 py-4">
-                            <div class="flex items-center justify-between">
-                                <p class="text-sm text-gray-500">
-                                    Page {{ requests.current_page }} of {{ requests.last_page }}
-                                </p>
-                                <div class="flex gap-2">
-                                    <Link
-                                        v-if="requests.prev_page_url"
-                                        :href="requests.prev_page_url"
-                                        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                                        preserve-scroll
-                                    >
-                                        Previous
-                                    </Link>
-                                    <Link
-                                        v-if="requests.next_page_url"
-                                        :href="requests.next_page_url"
-                                        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                                        preserve-scroll
-                                    >
-                                        Next
+                                        View
                                     </Link>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                <div v-else-if="!isSuperadmin" class="flex justify-end">
+                                    <Link
+                                        :href="route('registrar.requests.show', request.id)"
+                                        class="text-bnhs-blue hover:underline text-sm"
+                                    >
+                                        View
+                                    </Link>
+                                </div>
+                                <div v-else class="flex justify-end gap-2">
+                                    <button
+                                        @click="saveEdit(request.id)"
+                                        class="text-green-600 hover:text-green-800 text-sm font-medium"
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        @click="cancelEditing(request.id)"
+                                        class="text-gray-600 hover:text-gray-800 text-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </RequestsTable>
             </div>
         </div>
 
@@ -940,4 +656,5 @@ const saveEdit = (requestId: number) => {
         </Modal>
     </AuthenticatedLayout>
 </template>
+
 

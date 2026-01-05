@@ -72,8 +72,11 @@ class SuperadminRequestController extends Controller
         // Validate sort direction
         $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'desc';
 
+        // Per page pagination
+        $perPage = $request->per_page && in_array($request->per_page, [10, 25, 50, 100]) ? $request->per_page : 25;
+
         $requests = $query->orderBy($sortBy, $sortDirection)
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn($req) => [
                 'id' => $req->id,
@@ -97,7 +100,7 @@ class SuperadminRequestController extends Controller
             'requests' => $requests,
             'documentTypes' => $documentTypes,
             'statuses' => $statuses,
-            'filters' => $request->only(['search', 'status', 'document_type', 'lrn', 'from_date', 'to_date', 'sort_by', 'sort_direction']),
+            'filters' => $request->only(['search', 'status', 'document_type', 'lrn', 'from_date', 'to_date', 'sort_by', 'sort_direction', 'per_page']),
             'gradeLevels' => $this->getGradeLevels(),
             'trackStrands' => $this->getTrackStrands(),
             'schoolYears' => $this->getSchoolYears(),
@@ -264,6 +267,234 @@ class SuperadminRequestController extends Controller
         }
 
         return back()->withErrors(['error' => 'Invalid action.']);
+    }
+
+    /**
+     * Show a single request with full details.
+     */
+    public function show(DocumentRequest $documentRequest): Response
+    {
+        $documentRequest->load(['documentType', 'logs.user', 'processedBy']);
+
+        return Inertia::render('Admin/Superadmin/Requests/Show', [
+            'request' => [
+                'id' => $documentRequest->id,
+                'tracking_id' => $documentRequest->tracking_id,
+                'email' => $documentRequest->email,
+                'student_email' => $documentRequest->email,
+                'first_name' => $documentRequest->first_name,
+                'middle_name' => $documentRequest->middle_name,
+                'last_name' => $documentRequest->last_name,
+                'full_name' => $documentRequest->full_name,
+                'lrn' => $documentRequest->lrn,
+                'grade_level' => $documentRequest->grade_level,
+                'section' => $documentRequest->section,
+                'track_strand' => $documentRequest->track_strand,
+                'school_year_last_attended' => $documentRequest->school_year_last_attended,
+                'photo_path' => $documentRequest->photo_path,
+                'document_type' => $documentRequest->documentType ? ['name' => $documentRequest->documentType->name] : null,
+                'document_category' => $documentRequest->documentType->category ?? null,
+                'purpose' => $documentRequest->purpose,
+                'status' => $documentRequest->status,
+                'admin_notes' => $documentRequest->admin_notes,
+                'processed_by' => $documentRequest->processedBy?->name,
+                'created_at' => $documentRequest->created_at,
+                'updated_at' => $documentRequest->updated_at,
+                'request_logs' => $documentRequest->logs->map(fn($log) => [
+                    'id' => $log->id,
+                    'action' => $log->action,
+                    'old_value' => $log->old_value,
+                    'new_value' => $log->new_value,
+                    'description' => $log->description,
+                    'user' => $log->user ? ['name' => $log->user->name] : null,
+                    'created_at' => $log->created_at,
+                ]),
+            ],
+            'statuses' => ['Pending', 'Verified', 'Processing', 'Ready', 'Completed', 'Rejected'],
+        ]);
+    }
+
+    /**
+     * Update a request (inline editing).
+     */
+    public function update(Request $request, DocumentRequest $documentRequest)
+    {
+        $validated = $request->validate([
+            'first_name' => 'nullable|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'lrn' => 'nullable|string|size:12|regex:/^\d{12}$/',
+            'status' => ['nullable', Rule::in(['Pending', 'Verified', 'Processing', 'Ready', 'Completed', 'Rejected'])],
+        ]);
+
+        $changes = [];
+
+        if (isset($validated['first_name']) && $validated['first_name'] !== $documentRequest->first_name) {
+            $changes[] = "First name: {$documentRequest->first_name} → {$validated['first_name']}";
+            $documentRequest->first_name = $validated['first_name'];
+        }
+
+        if (isset($validated['middle_name']) && $validated['middle_name'] !== $documentRequest->middle_name) {
+            $changes[] = "Middle name: {$documentRequest->middle_name} → {$validated['middle_name']}";
+            $documentRequest->middle_name = $validated['middle_name'];
+        }
+
+        if (isset($validated['last_name']) && $validated['last_name'] !== $documentRequest->last_name) {
+            $changes[] = "Last name: {$documentRequest->last_name} → {$validated['last_name']}";
+            $documentRequest->last_name = $validated['last_name'];
+        }
+
+        if (isset($validated['email']) && $validated['email'] !== $documentRequest->email) {
+            $changes[] = "Email: {$documentRequest->email} → {$validated['email']}";
+            $documentRequest->email = $validated['email'];
+        }
+
+        if (isset($validated['lrn']) && $validated['lrn'] !== $documentRequest->lrn) {
+            $changes[] = "LRN: {$documentRequest->lrn} → {$validated['lrn']}";
+            $documentRequest->lrn = $validated['lrn'];
+        }
+
+        if (isset($validated['status']) && $validated['status'] !== $documentRequest->status) {
+            $documentRequest->updateStatus($validated['status'], $request->user(), null);
+            if ($validated['status'] === 'Completed' && !$documentRequest->completed_at) {
+                $documentRequest->update(['completed_at' => now()]);
+            }
+        }
+
+        if (!empty($changes)) {
+            $documentRequest->save();
+            RequestLog::create([
+                'document_request_id' => $documentRequest->id,
+                'user_id' => $request->user()->id,
+                'action' => 'request_updated',
+                'description' => 'Updated: ' . implode(', ', $changes),
+            ]);
+        }
+
+        return back()->with('success', 'Request updated successfully.');
+    }
+
+    /**
+     * Update request status.
+     */
+    public function updateStatus(Request $request, DocumentRequest $documentRequest)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['Pending', 'Verified', 'Processing', 'Ready', 'Completed', 'Rejected'])],
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $documentRequest->updateStatus($validated['status'], $request->user(), $validated['notes'] ?? null);
+
+        if ($validated['status'] === 'Completed' && !$documentRequest->completed_at) {
+            $documentRequest->update(['completed_at' => now()]);
+        }
+
+        $documentRequest->load('documentType');
+
+        try {
+            Mail::to($documentRequest->email)->send(new RequestStatusUpdatedMail($documentRequest, $documentRequest->status));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send status update email: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Request status updated successfully.');
+    }
+
+    /**
+     * Update admin notes.
+     */
+    public function updateNotes(Request $request, DocumentRequest $documentRequest)
+    {
+        $validated = $request->validate([
+            'admin_notes' => 'nullable|string|max:2000',
+        ]);
+
+        $oldNotes = $documentRequest->admin_notes;
+        $documentRequest->update(['admin_notes' => $validated['admin_notes']]);
+
+        RequestLog::create([
+            'document_request_id' => $documentRequest->id,
+            'user_id' => $request->user()->id,
+            'action' => 'note_updated',
+            'old_value' => $oldNotes ? 'Previous note' : null,
+            'new_value' => $validated['admin_notes'] ? 'Note updated' : 'Note cleared',
+            'description' => $validated['admin_notes'] ?: 'Notes cleared',
+        ]);
+
+        return back()->with('success', 'Notes updated successfully.');
+    }
+
+    /**
+     * Export requests to CSV.
+     */
+    public function export(Request $request)
+    {
+        $query = DocumentRequest::with('documentType');
+
+        // Apply same filters as index
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('tracking_id', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('lrn', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('status') && $request->status && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('document_type') && $request->document_type) {
+            $query->where('document_type_id', $request->document_type);
+        }
+
+        if ($request->has('from_date') && $request->from_date) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->has('to_date') && $request->to_date) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        // If specific IDs are provided, export only those
+        if ($request->has('ids') && is_array($request->ids)) {
+            $query->whereIn('id', $request->ids);
+        }
+
+        $requests = $query->orderBy('created_at', 'desc')->get();
+
+        $filename = 'requests_' . now()->format('Y-m-d_His') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function() use ($requests) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Tracking ID', 'Name', 'Email', 'LRN', 'Document Type', 'Status', 'Created At']);
+
+            foreach ($requests as $request) {
+                fputcsv($file, [
+                    $request->tracking_id,
+                    $request->full_name,
+                    $request->email,
+                    $request->lrn,
+                    $request->documentType->name ?? 'N/A',
+                    $request->status,
+                    $request->created_at->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**

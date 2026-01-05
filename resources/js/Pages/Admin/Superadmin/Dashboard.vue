@@ -104,7 +104,7 @@ const formatDate = (date: string) => {
                             <div class="flex items-center justify-between">
                                 <h3 class="text-lg font-semibold text-gray-900">Recent Requests</h3>
                                 <Link
-                                    :href="route('admin.superadmin.requests.index')"
+                                    :href="route('admin.requests.index')"
                                     class="text-sm text-bnhs-blue hover:underline"
                                 >
                                     View All →
@@ -120,7 +120,7 @@ const formatDate = (date: string) => {
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <Link
-                                            :href="route('admin.requests.show', request.id)"
+                                            :href="route('registrar.requests.show', request.id)"
                                             class="font-mono text-sm font-medium text-bnhs-blue hover:underline"
                                         >
                                             {{ request.tracking_id }}
@@ -153,7 +153,7 @@ const formatDate = (date: string) => {
                 <!-- Quick Actions -->
                 <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     <Link
-                        :href="route('admin.superadmin.users.index')"
+                        :href="route('admin.users.index')"
                         class="flex items-center gap-4 rounded-xl bg-white p-6 shadow transition hover:shadow-md"
                     >
                         <div class="rounded-full bg-bnhs-blue-100 p-4">
@@ -168,7 +168,7 @@ const formatDate = (date: string) => {
                     </Link>
 
                     <Link
-                        :href="route('admin.superadmin.requests.index')"
+                        :href="route('admin.requests.index')"
                         class="flex items-center gap-4 rounded-xl bg-white p-6 shadow transition hover:shadow-md"
                     >
                         <div class="rounded-full bg-bnhs-gold-100 p-4">
@@ -183,7 +183,7 @@ const formatDate = (date: string) => {
                     </Link>
 
                     <Link
-                        :href="route('admin.superadmin.logs.index')"
+                        :href="route('admin.logs.index')"
                         class="flex items-center gap-4 rounded-xl bg-white p-6 shadow transition hover:shadow-md"
                     >
                         <div class="rounded-full bg-green-100 p-4">
@@ -198,7 +198,7 @@ const formatDate = (date: string) => {
                     </Link>
 
                     <Link
-                        :href="route('admin.superadmin.settings.index')"
+                        :href="route('admin.settings.index')"
                         class="flex items-center gap-4 rounded-xl bg-white p-6 shadow transition hover:shadow-md"
                     >
                         <div class="rounded-full bg-purple-100 p-4">
@@ -217,4 +217,5 @@ const formatDate = (date: string) => {
         </div>
     </AuthenticatedLayout>
 </template>
+
 

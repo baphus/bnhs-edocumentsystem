@@ -66,8 +66,11 @@ class RequestManagementController extends Controller
         // Validate sort direction
         $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'desc';
 
+        // Per page pagination
+        $perPage = $request->per_page && in_array($request->per_page, [10, 25, 50, 100]) ? $request->per_page : 25;
+
         $requests = $query->orderBy($sortBy, $sortDirection)
-            ->paginate(20)
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn($req) => [
                 'id' => $req->id,
@@ -93,7 +96,7 @@ class RequestManagementController extends Controller
             'requests' => $requests,
             'documentTypes' => $documentTypes,
             'statuses' => $statuses,
-            'filters' => $request->only(['search', 'status', 'document_type_id', 'from_date', 'to_date', 'sort_by', 'sort_direction']),
+            'filters' => $request->only(['search', 'status', 'document_type_id', 'from_date', 'to_date', 'sort_by', 'sort_direction', 'per_page']),
             'gradeLevels' => $this->getGradeLevels(),
             'trackStrands' => $this->getTrackStrands(),
             'schoolYears' => $this->getSchoolYears(),
@@ -451,6 +454,106 @@ class RequestManagementController extends Controller
         $message = ucfirst(implode(' and ', $messageParts)) . ' updated for ' . $count . ' request(s) successfully.';
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Bulk delete requests (registrar cannot delete, only superadmin).
+     */
+    public function bulkDelete(Request $request)
+    {
+        // Only superadmin can delete
+        if ($request->user()->role !== 'superadmin') {
+            return back()->with('error', 'Only administrators can delete requests.');
+        }
+
+        $validated = $request->validate([
+            'request_ids' => 'required|array',
+            'request_ids.*' => 'exists:document_requests,id',
+        ]);
+
+        $count = DocumentRequest::whereIn('id', $validated['request_ids'])->delete();
+
+        foreach ($validated['request_ids'] as $id) {
+            RequestLog::create([
+                'document_request_id' => $id,
+                'user_id' => $request->user()->id,
+                'action' => 'request_deleted',
+                'description' => "Bulk deleted by {$request->user()->name}",
+            ]);
+        }
+
+        return back()->with('success', "{$count} request(s) deleted successfully.");
+    }
+
+    /**
+     * Export requests to CSV.
+     */
+    public function export(Request $request)
+    {
+        $query = DocumentRequest::with('documentType');
+
+        // Apply same filters as index
+        if ($request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('tracking_id', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('lrn', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->status && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->document_type_id) {
+            $query->where('document_type_id', $request->document_type_id);
+        }
+
+        if ($request->from_date) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->to_date) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        // If specific IDs are provided, export only those
+        if ($request->has('ids') && is_array($request->ids)) {
+            $query->whereIn('id', $request->ids);
+        }
+
+        $requests = $query->orderBy('created_at', 'desc')->get();
+
+        $filename = 'requests_' . now()->format('Y-m-d_His') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function() use ($requests) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Tracking ID', 'Name', 'Email', 'LRN', 'Document Type', 'Status', 'Created At']);
+
+            foreach ($requests as $req) {
+                fputcsv($file, [
+                    $req->tracking_id,
+                    $req->full_name,
+                    $req->email,
+                    $req->lrn,
+                    $req->documentType->name ?? 'N/A',
+                    $req->status,
+                    $req->created_at->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**
