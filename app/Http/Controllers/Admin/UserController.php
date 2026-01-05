@@ -66,7 +66,7 @@ class UserController extends Controller
     public function create(): Response
     {
         return Inertia::render("Admin/Users/Create", [
-            "roles" => [User::ROLE_ADMIN, User::ROLE_REGISTRAR, User::ROLE_GUEST],
+            "roles" => [User::ROLE_ADMIN, User::ROLE_REGISTRAR],
         ]);
     }
 
@@ -79,7 +79,7 @@ class UserController extends Controller
             "name" => "required|string|max:255",
             "email" => "required|email|unique:users,email",
             "password" => ["required", "confirmed", Password::defaults()],
-            "role" => ["required", Rule::in([User::ROLE_ADMIN, User::ROLE_REGISTRAR, User::ROLE_GUEST])],
+            "role" => ["required", Rule::in([User::ROLE_ADMIN, User::ROLE_REGISTRAR])],
         ]);
 
         $user = User::create([
@@ -124,7 +124,7 @@ class UserController extends Controller
                 "email" => $user->email,
                 "role" => $user->role,
             ],
-            "roles" => [User::ROLE_ADMIN, User::ROLE_REGISTRAR, User::ROLE_GUEST],
+            "roles" => [User::ROLE_ADMIN, User::ROLE_REGISTRAR],
         ]);
     }
 
@@ -136,7 +136,7 @@ class UserController extends Controller
         $validated = $request->validate([
             "name" => "required|string|max:255",
             "email" => ["required", "email", Rule::unique("users")->ignore($user->id)],
-            "role" => ["required", Rule::in([User::ROLE_ADMIN, User::ROLE_REGISTRAR, User::ROLE_GUEST])],
+            "role" => ["required", Rule::in([User::ROLE_ADMIN, User::ROLE_REGISTRAR])],
             "password" => ["nullable", "confirmed", Password::defaults()],
         ]);
 
@@ -160,59 +160,6 @@ class UserController extends Controller
 
         return redirect()->route("admin.users.index")
             ->with("success", "User updated successfully.");
-    }
-
-    /**
-     * Impersonate another user.
-     */
-    public function impersonate(Request $request, User $user)
-    {
-        if ($user->id === $request->user()->id) {
-            return back()->withErrors(["error" => "You cannot impersonate yourself."]);
-        }
-
-        $request->session()->put("impersonating", $request->user()->id);
-
-        // Log the action
-        RequestLog::create([
-            "document_request_id" => null,
-            "user_id" => $request->user()->id,
-            "action" => "impersonate",
-            "description" => "Admin {$request->user()->name} impersonated user {$user->name}",
-        ]);
-
-        Auth::login($user);
-
-        return redirect()->route("admin.dashboard")
-            ->with("success", "Now impersonating {$user->name}");
-    }
-
-    /**
-     * Stop impersonating and return to original user.
-     */
-    public function stopImpersonating(Request $request)
-    {
-        $originalUserId = $request->session()->get("impersonating");
-
-        if (!$originalUserId) {
-            return redirect()->route("admin.dashboard")
-                ->with("error", "No active impersonation session.");
-        }
-
-        $originalUser = User::find($originalUserId);
-
-        if (!$originalUser) {
-            $request->session()->forget("impersonating");
-            return redirect()->route("login")
-                ->with("error", "Original user account not found.");
-        }
-
-        $request->session()->forget("impersonating");
-
-        Auth::login($originalUser);
-
-        return redirect()->route("admin.users.index")
-            ->with("success", "Stopped impersonating. Returned to your account.");
     }
 
     /**

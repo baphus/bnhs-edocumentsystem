@@ -27,12 +27,6 @@ const deleteUser = () => {
     }
 };
 
-const impersonateUser = (user: User) => {
-    if (confirm(`Are you sure you want to impersonate ${user.name}?`)) {
-        router.post(route('admin.users.impersonate', user.id));
-    }
-};
-
 const getRoleColor = (role: string) => {
     const colors: Record<string, string> = {
         'admin': 'bg-purple-100 text-purple-800',
@@ -56,24 +50,28 @@ const formatDate = (date: string) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Manage Users
-                </h2>
-                <Link
-                    :href="route('admin.users.create')"
-                    class="flex items-center gap-2 rounded-lg bg-bnhs-blue px-4 py-2 text-sm font-medium text-white hover:bg-bnhs-blue-600"
-                >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Add User
-                </Link>
-            </div>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                Manage Users
+            </h2>
         </template>
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <!-- Actions -->
+                <div class="mb-6 rounded-xl bg-white p-6 shadow">
+                    <div class="flex items-center justify-end">
+                        <Link
+                            :href="route('admin.users.create')"
+                            class="flex items-center gap-2 rounded-lg bg-bnhs-blue px-4 py-2 text-sm font-medium text-white hover:bg-bnhs-blue-600"
+                        >
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add User
+                        </Link>
+                    </div>
+                </div>
+
                 <div class="overflow-hidden rounded-xl bg-white shadow">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -99,9 +97,6 @@ const formatDate = (date: string) => {
                             <tr v-for="user in users.data" :key="user.id" class="hover:bg-gray-50">
                                 <td class="whitespace-nowrap px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-bnhs-blue text-sm font-medium text-white">
-                                            {{ user.name.charAt(0).toUpperCase() }}
-                                        </div>
                                         <div class="flex flex-col">
                                             <span class="font-medium text-gray-900">{{ user.name }}</span>
                                             <span v-if="user.id === $page.props.auth.user.id" class="text-xs text-gray-500">(You)</span>
@@ -121,13 +116,6 @@ const formatDate = (date: string) => {
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-right">
                                     <div v-if="user.id !== $page.props.auth.user.id" class="flex items-center justify-end gap-3">
-                                        <button
-                                            @click="impersonateUser(user)"
-                                            class="text-purple-600 hover:underline"
-                                            title="Impersonate User"
-                                        >
-                                            Impersonate
-                                        </button>
                                         <Link
                                             :href="route('admin.users.edit', user.id)"
                                             class="text-bnhs-blue hover:underline"

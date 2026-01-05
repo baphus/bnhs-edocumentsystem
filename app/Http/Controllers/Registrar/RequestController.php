@@ -517,48 +517,58 @@ class RequestController extends Controller
             $query->whereDate("created_at", "<=", $request->to_date);
         }
 
+        // If specific IDs are provided, export only those
+        if ($request->has("ids") && is_array($request->ids)) {
+            $query->whereIn("id", $request->ids);
+        }
+
         $requests = $query->latest()->get();
 
         $filename = "requests-" . date("Y-m-d-His") . ".csv";
-        $handle = fopen("php://output", "w");
         
-        // Set headers for download
-        header("Content-Type: text/csv");
-        header("Content-Disposition: attachment; filename=\"{$filename}\"");
+        $headers = [
+            "Content-Type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=\"{$filename}\"",
+        ];
 
-        // Add CSV headers
-        fputcsv($handle, [
-            "Tracking ID",
-            "Date Requested",
-            "Status",
-            "Document Type",
-            "Student Name",
-            "LRN",
-            "Grade Level",
-            "Section",
-            "Email",
-            "Purpose",
-            "Date Completed"
-        ]);
-
-        foreach ($requests as $req) {
+        $callback = function() use ($requests) {
+            $handle = fopen("php://output", "w");
+            
+            // Add CSV headers
             fputcsv($handle, [
-                $req->tracking_id,
-                $req->created_at->format("Y-m-d H:i:s"),
-                $req->status,
-                $req->documentType->name,
-                $req->full_name,
-                $req->lrn,
-                $req->grade_level,
-                $req->section,
-                $req->email,
-                $req->purpose,
-                $req->completed_at ? $req->completed_at->format("Y-m-d H:i:s") : ""
+                "Tracking ID",
+                "Date Requested",
+                "Status",
+                "Document Type",
+                "Student Name",
+                "LRN",
+                "Grade Level",
+                "Section",
+                "Email",
+                "Purpose",
+                "Date Completed"
             ]);
-        }
 
-        fclose($handle);
-        exit;
+            foreach ($requests as $req) {
+                fputcsv($handle, [
+                    $req->tracking_id,
+                    $req->created_at->format("Y-m-d H:i:s"),
+                    $req->status,
+                    $req->documentType->name,
+                    $req->full_name,
+                    $req->lrn,
+                    $req->grade_level,
+                    $req->section,
+                    $req->email,
+                    $req->purpose,
+                    $req->completed_at ? $req->completed_at->format("Y-m-d H:i:s") : ""
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     // Helper methods for dropdowns

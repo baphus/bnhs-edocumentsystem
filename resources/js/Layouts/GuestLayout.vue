@@ -23,9 +23,14 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
             <slot />
         </div>
 
-        <p class="mt-6 text-xs text-gray-400">
-            &copy; {{ new Date().getFullYear() }} BNHS eDocument System
-        </p>
+        <div class="mt-6 text-center">
+            <p class="text-xs text-gray-400">
+                &copy; {{ new Date().getFullYear() }} BNHS eDocument System
+            </p>
+            <Link :href="route('login')" class="mt-1 block text-[10px] text-gray-300 hover:text-gray-400 transition">
+                Admin
+            </Link>
+        </div>
     </div>
 </template>
 

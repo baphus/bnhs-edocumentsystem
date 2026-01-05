@@ -121,7 +121,7 @@ const exportCsv = () => {
     Object.entries(props.filters).forEach(([key, value]) => {
         if (value) params.append(key, String(value));
     });
-    const url = route('registrar.requests.export');
+    const url = route('admin.requests.export');
     window.location.href = params.toString() ? `${url}?${params.toString()}` : url;
 };
 
@@ -192,7 +192,7 @@ const bulkExport = (selectedRequests: number[]) => {
 
     const params = new URLSearchParams();
     selectedRequests.forEach(id => params.append('ids[]', id.toString()));
-    const url = route('registrar.requests.export');
+    const url = route('admin.requests.export');
     window.location.href = `${url}?${params.toString()}`;
 };
 

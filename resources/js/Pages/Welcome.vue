@@ -523,7 +523,7 @@ Please ensure all documents are complete before visiting the office.`
                             :href="route('login')"
                             class="mt-1 text-xs text-gray-400 hover:text-gray-500 transition"
                         >
-                            •
+                            Login
                         </Link>
                     </div>
                 </div>

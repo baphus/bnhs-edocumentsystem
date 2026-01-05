@@ -123,13 +123,13 @@ Route::middleware(["auth", "role:registrar"])->prefix("registrar")->name("regist
     Route::get("/requests", [RegistrarRequestController::class, "index"])->name("requests.index");
     Route::get("/requests/create", [RegistrarRequestController::class, "create"])->name("requests.create");
     Route::post("/requests", [RegistrarRequestController::class, "store"])->name("requests.store");
+    Route::get("/requests/export", [RegistrarRequestController::class, "export"])->name("requests.export");
     Route::get("/requests/{documentRequest}", [RegistrarRequestController::class, "show"])->name("requests.show");
     Route::patch("/requests/{documentRequest}", [RegistrarRequestController::class, "update"])->name("requests.update");
     Route::patch("/requests/{documentRequest}/status", [RegistrarRequestController::class, "updateStatus"])->name("requests.update-status");
     Route::patch("/requests/{documentRequest}/notes", [RegistrarRequestController::class, "updateNotes"])->name("requests.update-notes");
     Route::post("/requests/bulk-update", [RegistrarRequestController::class, "bulkUpdate"])->name("requests.bulk-update");
     Route::post("/requests/bulk-delete", [RegistrarRequestController::class, "bulkDelete"])->name("requests.bulk-delete");
-    Route::get("/requests/export", [RegistrarRequestController::class, "export"])->name("requests.export");
 });
 
 // Admin-only routes (formerly Superadmin)
@@ -144,8 +144,6 @@ Route::middleware(["auth", "role:admin"])->prefix("admin")->name("admin.")->grou
     Route::get("/users/{user}", [AdminUserController::class, "show"])->name("users.show");
     Route::get("/users/{user}/edit", [AdminUserController::class, "edit"])->name("users.edit");
     Route::patch("/users/{user}", [AdminUserController::class, "update"])->name("users.update");
-    Route::post("/users/{user}/impersonate", [AdminUserController::class, "impersonate"])->name("users.impersonate");
-    Route::post("/users/stop-impersonating", [AdminUserController::class, "stopImpersonating"])->name("users.stop-impersonating");
     Route::post("/users/{user}/reset-password", [AdminUserController::class, "resetPassword"])->name("users.reset-password");
     Route::patch("/users/{user}/status", [AdminUserController::class, "updateStatus"])->name("users.update-status");
     Route::post("/users/bulk-status", [AdminUserController::class, "bulkUpdateStatus"])->name("users.bulk-status");
@@ -155,12 +153,12 @@ Route::middleware(["auth", "role:admin"])->prefix("admin")->name("admin.")->grou
     Route::get("/requests", [AdminRequestController::class, "index"])->name("requests.index");
     Route::get("/requests/create", [AdminRequestController::class, "create"])->name("requests.create");
     Route::post("/requests", [AdminRequestController::class, "store"])->name("requests.store");
+    Route::get("/requests/export", [AdminRequestController::class, "export"])->name("requests.export");
     Route::get("/requests/{documentRequest}", [AdminRequestController::class, "show"])->name("requests.show");
     Route::patch("/requests/{documentRequest}", [AdminRequestController::class, "update"])->name("requests.update");
     Route::patch("/requests/{documentRequest}/status", [AdminRequestController::class, "updateStatus"])->name("requests.update-status");
     Route::patch("/requests/{documentRequest}/notes", [AdminRequestController::class, "updateNotes"])->name("requests.update-notes");
     Route::post("/requests/bulk-action", [AdminRequestController::class, "bulkAction"])->name("requests.bulk");
-    Route::get("/requests/export", [AdminRequestController::class, "export"])->name("requests.export");
     Route::delete("/requests/{documentRequest}", [AdminRequestController::class, "destroy"])->name("requests.destroy");
     
     // Document Types CRUD

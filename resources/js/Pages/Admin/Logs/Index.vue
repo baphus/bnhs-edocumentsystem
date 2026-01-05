@@ -4,7 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 interface RequestLog {
     id: number;
@@ -58,6 +58,11 @@ interface Props {
 const props = defineProps<Props>();
 
 const activeTab = ref<'request' | 'email'>('request');
+const showFilters = ref(false);
+
+watch(activeTab, () => {
+    showFilters.value = false;
+});
 
 // Request Log Filters
 const actionFilter = ref(props.filters.action || '');
@@ -197,48 +202,73 @@ const getActionColor = (action: string) => {
                 <div v-show="activeTab === 'request'">
                     <!-- Filters -->
                     <div class="mb-6 rounded-xl bg-white p-6 shadow">
-                        <div class="grid gap-4 sm:grid-cols-5">
-                            <div>
-                                <select
-                                    v-model="actionFilter"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                >
-                                    <option value="">All Actions</option>
-                                    <option v-for="action in actions" :key="action" :value="action">
-                                        {{ action }}
-                                    </option>
-                                </select>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex-1 max-w-md">
+                                    <h3 class="text-lg font-medium text-gray-900">Request Logs</h3>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <SecondaryButton @click="showFilters = !showFilters" class="whitespace-nowrap">
+                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                        </svg>
+                                        Filters
+                                        <svg class="ml-2 h-4 w-4" :class="{ 'rotate-180': showFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </SecondaryButton>
+                                </div>
                             </div>
-                            <div>
-                                <select
-                                    v-model="userIdFilter"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                >
-                                    <option value="">All Users</option>
-                                    <option v-for="user in users" :key="user.id" :value="user.id">
-                                        {{ user.name }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div>
-                                <TextInput
-                                    v-model="fromDateFilter"
-                                    type="date"
-                                    class="w-full"
-                                    placeholder="From Date"
-                                />
-                            </div>
-                            <div>
-                                <TextInput
-                                    v-model="toDateFilter"
-                                    type="date"
-                                    class="w-full"
-                                    placeholder="To Date"
-                                />
-                            </div>
-                            <div class="flex gap-2">
-                                <PrimaryButton @click="applyRequestFilters" class="flex-1 justify-center"> Apply </PrimaryButton>
-                                <SecondaryButton @click="clearRequestFilters" class="flex-1 justify-center"> Clear </SecondaryButton>
+
+                            <div v-if="showFilters" class="pt-4 border-t border-gray-200">
+                                <div class="grid gap-4 sm:grid-cols-5">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Action</label>
+                                        <select
+                                            v-model="actionFilter"
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        >
+                                            <option value="">All Actions</option>
+                                            <option v-for="action in actions" :key="action" :value="action">
+                                                {{ action }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">User</label>
+                                        <select
+                                            v-model="userIdFilter"
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        >
+                                            <option value="">All Users</option>
+                                            <option v-for="user in users" :key="user.id" :value="user.id">
+                                                {{ user.name }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                                        <TextInput
+                                            v-model="fromDateFilter"
+                                            type="date"
+                                            class="w-full"
+                                            placeholder="From Date"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                                        <TextInput
+                                            v-model="toDateFilter"
+                                            type="date"
+                                            class="w-full"
+                                            placeholder="To Date"
+                                        />
+                                    </div>
+                                    <div class="flex items-end gap-2">
+                                        <PrimaryButton @click="applyRequestFilters" class="flex-1 justify-center"> Apply </PrimaryButton>
+                                        <SecondaryButton @click="clearRequestFilters" class="flex-1 justify-center"> Clear </SecondaryButton>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -338,38 +368,62 @@ const getActionColor = (action: string) => {
                 <div v-show="activeTab === 'email'">
                     <!-- Filters -->
                     <div class="mb-6 rounded-xl bg-white p-6 shadow">
-                        <div class="grid gap-4 sm:grid-cols-4">
-                            <div>
-                                <select
-                                    v-model="emailStatusFilter"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                >
-                                    <option value="">All Statuses</option>
-                                    <option value="queued">Queued</option>
-                                    <option value="sent">Sent</option>
-                                    <option value="delivered">Delivered</option>
-                                    <option value="failed">Failed</option>
-                                </select>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex-1 max-w-md">
+                                    <h3 class="text-lg font-medium text-gray-900">Email Logs</h3>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <SecondaryButton @click="showFilters = !showFilters" class="whitespace-nowrap">
+                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                        </svg>
+                                        Filters
+                                        <svg class="ml-2 h-4 w-4" :class="{ 'rotate-180': showFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </SecondaryButton>
+                                </div>
                             </div>
-                            <div>
-                                <TextInput
-                                    v-model="emailFromDateFilter"
-                                    type="date"
-                                    class="w-full"
-                                    placeholder="From Date"
-                                />
-                            </div>
-                            <div>
-                                <TextInput
-                                    v-model="emailToDateFilter"
-                                    type="date"
-                                    class="w-full"
-                                    placeholder="To Date"
-                                />
-                            </div>
-                            <div class="flex gap-2">
-                                <PrimaryButton @click="applyEmailFilters" class="flex-1 justify-center"> Apply </PrimaryButton>
-                                <SecondaryButton @click="clearEmailFilters" class="flex-1 justify-center"> Clear </SecondaryButton>
+
+                            <div v-if="showFilters" class="pt-4 border-t border-gray-200">
+                                <div class="grid gap-4 sm:grid-cols-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                        <select
+                                            v-model="emailStatusFilter"
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        >
+                                            <option value="">All Statuses</option>
+                                            <option value="queued">Queued</option>
+                                            <option value="sent">Sent</option>
+                                            <option value="delivered">Delivered</option>
+                                            <option value="failed">Failed</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                                        <TextInput
+                                            v-model="emailFromDateFilter"
+                                            type="date"
+                                            class="w-full"
+                                            placeholder="From Date"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                                        <TextInput
+                                            v-model="emailToDateFilter"
+                                            type="date"
+                                            class="w-full"
+                                            placeholder="To Date"
+                                        />
+                                    </div>
+                                    <div class="flex items-end gap-2">
+                                        <PrimaryButton @click="applyEmailFilters" class="flex-1 justify-center"> Apply </PrimaryButton>
+                                        <SecondaryButton @click="clearEmailFilters" class="flex-1 justify-center"> Clear </SecondaryButton>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
