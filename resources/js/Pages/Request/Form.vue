@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { DocumentType } from '@/types';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
@@ -23,8 +23,84 @@ const form = useForm({
     quantity: 1,
     document_type_id: props.documentType.id,
     email: props.email,
+    signature: '',
 });
 const lrnError = ref('');
+const signatureCanvas = ref<HTMLCanvasElement | null>(null);
+const isDrawing = ref(false);
+const signatureError = ref('');
+let ctx: CanvasRenderingContext2D | null = null;
+
+const setupCanvas = () => {
+    const canvas = signatureCanvas.value;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    ctx = canvas.getContext('2d');
+    if (ctx) {
+        ctx.scale(dpr, dpr);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+};
+
+onMounted(() => {
+    setupCanvas();
+    window.addEventListener('resize', setupCanvas);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('resize', setupCanvas);
+});
+
+const startDrawing = (e: MouseEvent | TouchEvent) => {
+    isDrawing.value = true;
+    signatureError.value = '';
+    const canvas = signatureCanvas.value;
+    if (!canvas || !ctx) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+};
+
+const draw = (e: MouseEvent | TouchEvent) => {
+    if (!isDrawing.value || !ctx || !signatureCanvas.value) return;
+    
+    e.preventDefault();
+    const canvas = signatureCanvas.value;
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    
+    ctx.lineTo(x, y);
+    ctx.stroke();
+};
+
+const stopDrawing = () => {
+    if (isDrawing.value && signatureCanvas.value) {
+        isDrawing.value = false;
+        form.signature = signatureCanvas.value.toDataURL();
+    }
+};
+
+const clearSignature = () => {
+    if (signatureCanvas.value && ctx) {
+        ctx.clearRect(0, 0, signatureCanvas.value.width, signatureCanvas.value.height);
+        form.signature = '';
+        signatureError.value = '';
+    }
+};
 
 const gradeLevels = [
     { value: 'Grade 7', label: 'Grade 7' },
@@ -113,6 +189,12 @@ const formatLrn = (e: Event) => {
 };
 
 const submitRequest = () => {
+    // Validate signature
+    if (!form.signature) {
+        signatureError.value = 'Please provide your signature';
+        return;
+    }
+    
     // Use purpose_other if "Other" is selected, otherwise use the selected purpose
     const finalPurpose = form.purpose === 'Other' ? form.purpose_other : form.purpose;
     
@@ -363,6 +445,48 @@ const submitRequest = () => {
                                     />
                                     <p v-if="form.errors.purpose_other" class="mt-1 text-sm text-red-600">{{ form.errors.purpose_other }}</p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Signature -->
+                    <div>
+                        <h2 class="mb-4 text-lg font-semibold text-gray-900">Signature *</h2>
+                        <div class="space-y-4">
+                            <div class="rounded-lg border-2 border-dashed border-gray-300 p-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Please sign below using your mouse or finger
+                                </label>
+                                <div class="relative">
+                                    <canvas
+                                        ref="signatureCanvas"
+                                        class="w-full border border-gray-300 rounded-lg bg-white cursor-crosshair touch-none"
+                                        @mousedown="startDrawing"
+                                        @mousemove="draw"
+                                        @mouseup="stopDrawing"
+                                        @mouseleave="stopDrawing"
+                                        @touchstart="startDrawing"
+                                        @touchmove="draw"
+                                        @touchend="stopDrawing"
+                                    ></canvas>
+                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-300" v-if="!form.signature">
+                                        <p class="text-sm">Sign here</p>
+                                    </div>
+                                </div>
+                                <div class="mt-2 flex justify-between items-center">
+                                    <p class="text-xs text-gray-500">
+                                        Your signature will be used to verify your identity
+                                    </p>
+                                    <button
+                                        type="button"
+                                        @click="clearSignature"
+                                        class="text-sm text-red-600 hover:text-red-700 font-medium"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                                <p v-if="signatureError" class="mt-2 text-sm text-red-600">{{ signatureError }}</p>
+                                <p v-if="form.errors.signature" class="mt-2 text-sm text-red-600">{{ form.errors.signature }}</p>
                             </div>
                         </div>
                     </div>

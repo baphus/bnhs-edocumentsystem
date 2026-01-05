@@ -22,7 +22,7 @@ class UserManagementController extends Controller
             ->paginate(20)
             ->through(fn($user) => [
                 'id' => $user->id,
-                'name' => $user->name,
+                'name' => $user->formatted_name,
                 'email' => $user->email,
                 'role' => $user->role,
                 'created_at' => $user->created_at,

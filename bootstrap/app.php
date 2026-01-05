@@ -31,9 +31,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'security' => \App\Http\Middleware\SecurityHeaders::class,
             'audit' => \App\Http\Middleware\AuditLog::class,
         ]);
-
-        // Rate limiting
-        $middleware->throttle('60,1');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

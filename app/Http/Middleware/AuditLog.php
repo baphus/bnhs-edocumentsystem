@@ -61,7 +61,6 @@ class AuditLog
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'status_code' => $response->status(),
-            'timestamp' => now(),
         ]);
     }
 }

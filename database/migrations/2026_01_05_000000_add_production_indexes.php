@@ -12,6 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip on SQLite (dev/test) to avoid duplicate index issues; intended for production
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Index for document_requests table - frequently queried columns
         Schema::table('document_requests', function (Blueprint $table) {
             // Composite index for common query patterns
@@ -42,14 +47,16 @@ return new class extends Migration
         // Index for email_logs table
         Schema::table('email_logs', function (Blueprint $table) {
             $table->index(['recipient_email', 'sent_at']);
-            $table->index(['email_type', 'status']);
+              $table->index(['status', 'created_at']);
         });
 
-        // Index for sessions table - already optimized but ensure
-        Schema::table('sessions', function (Blueprint $table) {
-            $table->index(['user_id']);
-            $table->index(['last_activity']);
-        });
+        // Index for sessions table - skip on SQLite to avoid duplicate index errors in dev/test
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            Schema::table('sessions', function (Blueprint $table) {
+                $table->index(['user_id']);
+                $table->index(['last_activity']);
+            });
+        }
     }
 
     /**
@@ -57,6 +64,11 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Skip on SQLite (dev/test) to avoid index issues; intended for production
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         Schema::table('document_requests', function (Blueprint $table) {
             $table->dropIndex(['email', 'status', 'created_at']);
             $table->dropIndex(['tracking_id', 'deleted_at']);
@@ -81,12 +93,14 @@ return new class extends Migration
 
         Schema::table('email_logs', function (Blueprint $table) {
             $table->dropIndex(['recipient_email', 'sent_at']);
-            $table->dropIndex(['email_type', 'status']);
+              $table->dropIndex(['status', 'created_at']);
         });
 
-        Schema::table('sessions', function (Blueprint $table) {
-            $table->dropIndex(['user_id']);
-            $table->dropIndex(['last_activity']);
-        });
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            Schema::table('sessions', function (Blueprint $table) {
+                $table->dropIndex(['user_id']);
+                $table->dropIndex(['last_activity']);
+            });
+        }
     }
 };

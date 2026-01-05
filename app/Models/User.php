@@ -91,4 +91,24 @@ class User extends Authenticatable
     {
         return in_array($this->role, ['superadmin', 'registrar']);
     }
+
+    /**
+     * Get the user's name with middle names as initials.
+     */
+    public function getFormattedNameAttribute(): string
+    {
+        $parts = explode(' ', $this->name);
+        if (count($parts) > 2) {
+            $firstName = array_shift($parts);
+            $lastName = array_pop($parts);
+            $middleInitials = '';
+            foreach ($parts as $part) {
+                $middleInitials .= strtoupper(substr($part, 0, 1)).'. ';
+            }
+
+            return $firstName.' '.trim($middleInitials).' '.$lastName;
+        }
+
+        return $this->name;
+    }
 }

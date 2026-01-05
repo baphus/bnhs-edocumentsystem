@@ -51,6 +51,35 @@ const getStatusColor = (status: string) => {
     return colors[status] || colors['Pending'];
 };
 
+// Document progress helpers (unified system)
+const progressSteps = [
+    { key: 'Pending', label: 'Submitted', description: 'Request submitted and under review' },
+    { key: 'Verified', label: 'Verified', description: 'Information verified and approved' },
+    { key: 'Processing', label: 'Processing', description: 'Document is being prepared' },
+    { key: 'Ready', label: 'Ready', description: 'Document is ready for pickup' },
+    { key: 'Completed', label: 'Completed', description: 'Request completed successfully' }
+];
+
+const getProgressPercentage = (status: string) => {
+    const statusIndex = progressSteps.findIndex(step => step.key === status);
+    if (statusIndex === -1) return 0;
+    return ((statusIndex + 1) / progressSteps.length) * 100;
+};
+
+const getCurrentStepIndex = (status: string) => {
+    const index = progressSteps.findIndex(step => step.key === status);
+    return index === -1 ? 0 : index;
+};
+
+const isStepCompleted = (stepIndex: number, currentStatus: string) => {
+    const currentIndex = getCurrentStepIndex(currentStatus);
+    return stepIndex <= currentIndex;
+};
+
+const isStepActive = (stepIndex: number, currentStatus: string) => {
+    return stepIndex === getCurrentStepIndex(currentStatus);
+};
+
 const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-PH', {
         month: 'short',
@@ -104,6 +133,66 @@ const formatAction = (action: string) => {
                         <span :class="['rounded-full border px-4 py-2 text-sm font-medium', getStatusColor(request.status)]">
                             {{ request.status }}
                         </span>
+                    </div>
+
+                    <!-- Compact Progress Section -->
+                    <div class="mt-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-semibold text-gray-900">Progress</h3>
+                            <span class="text-sm font-medium text-gray-600">{{ Math.round(getProgressPercentage(request.status)) }}%</span>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                            <div 
+                                class="bg-gradient-to-r from-bnhs-blue to-bnhs-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
+                                :style="{ width: getProgressPercentage(request.status) + '%' }"
+                            ></div>
+                        </div>
+
+                        <!-- Compact Progress Steps -->
+                        <div class="flex justify-between items-center">
+                            <div 
+                                v-for="(step, index) in progressSteps" 
+                                :key="step.key"
+                                class="flex flex-col items-center flex-1"
+                            >
+                                <div 
+                                    :class="[
+                                        'flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-300 mb-1',
+                                        isStepCompleted(index, request.status) && request.status !== 'Rejected'
+                                            ? 'bg-green-500 border-green-500 text-white'
+                                            : isStepActive(index, request.status) && request.status !== 'Rejected'
+                                            ? 'bg-bnhs-blue border-bnhs-blue text-white'
+                                            : request.status === 'Rejected'
+                                            ? 'bg-red-500 border-red-500 text-white'
+                                            : 'bg-gray-100 border-gray-300 text-gray-500'
+                                    ]"
+                                >
+                                    <svg v-if="isStepCompleted(index, request.status) && request.status !== 'Rejected'" class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <svg v-else-if="request.status === 'Rejected'" class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span v-else class="text-xs font-medium">{{ index + 1 }}</span>
+                                </div>
+                                <span 
+                                    :class="[
+                                        'text-xs font-medium text-center',
+                                        isStepCompleted(index, request.status) && request.status !== 'Rejected'
+                                            ? 'text-green-600'
+                                            : isStepActive(index, request.status) && request.status !== 'Rejected'
+                                            ? 'text-bnhs-blue'
+                                            : request.status === 'Rejected'
+                                            ? 'text-red-600'
+                                            : 'text-gray-500'
+                                    ]"
+                                >
+                                    {{ step.label }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mt-6 flex gap-3">

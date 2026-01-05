@@ -102,7 +102,7 @@ class TrackingController extends Controller
                     'new_value' => $log->new_value,
                     'description' => $log->description,
                     'created_at' => $log->created_at,
-                    'user' => $log->user?->name,
+                    'user' => $log->user?->formatted_name,
                 ]),
             ],
         ]);
@@ -154,7 +154,7 @@ class TrackingController extends Controller
                     'new_value' => $log->new_value,
                     'description' => $log->description,
                     'created_at' => $log->created_at,
-                    'user' => $log->user?->name,
+                    'user' => $log->user?->formatted_name,
                 ]),
             ],
         ]);

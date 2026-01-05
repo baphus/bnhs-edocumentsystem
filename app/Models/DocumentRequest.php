@@ -101,13 +101,13 @@ class DocumentRequest extends Model
      */
     public function getFullNameAttribute(): string
     {
-        $parts = array_filter([
-            $this->first_name,
-            $this->middle_name,
-            $this->last_name,
-        ]);
-        
-        return implode(' ', $parts);
+        $parts = [$this->first_name];
+        if (! empty($this->middle_name)) {
+            $parts[] = strtoupper(substr($this->middle_name, 0, 1)).'.';
+        }
+        $parts[] = $this->last_name;
+
+        return implode(' ', array_filter($parts));
     }
 
     /**

@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Listeners;
+
+use App\Models\EmailLog;
+use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Support\Facades\Log;
+
+class LogSentEmail
+{
+    /**
+     * Handle the event.
+     */
+    public function handle(MessageSent $event): void
+    {
+        try {
+            $message = $event->message;
+            
+            // Get recipient email (first TO address)
+            $recipientEmail = null;
+            $recipients = $message->getTo();
+            if (is_array($recipients) && count($recipients) > 0) {
+                $first = reset($recipients);
+                // Symfony\Component\Mime\Address exposes getAddress()
+                if (is_object($first) && method_exists($first, 'getAddress')) {
+                    $recipientEmail = $first->getAddress();
+                } elseif (is_array($first) && isset($first['address'])) {
+                    $recipientEmail = $first['address'];
+                }
+            }
+            
+            // Get subject
+            $subject = $message->getSubject() ?? 'No Subject';
+            
+            // Check if this exact email was already logged (prevent duplicates)
+            // Check within the last 10 seconds to catch rapid duplicate events
+            $recentLog = EmailLog::where('recipient_email', $recipientEmail)
+                ->where('subject', $subject)
+                ->where('created_at', '>', now()->subSeconds(10))
+                ->first();
+            
+            if ($recentLog) {
+                // Already logged this email, skip to prevent duplicates
+                return;
+            }
+            
+            // Extract document_request_id from the email if available
+            $documentRequestId = null;
+            
+            // Try to extract document request from the mailable
+            $mailable = $event->sent;
+            if ($mailable) {
+                // Check if mailable has documentRequest property
+                if (property_exists($mailable, 'documentRequest') && $mailable->documentRequest) {
+                    $documentRequestId = $mailable->documentRequest->id;
+                }
+            }
+            
+            // Create email log entry
+            EmailLog::create([
+                'document_request_id' => $documentRequestId,
+                'recipient_email' => $recipientEmail,
+                'subject' => $subject,
+                'status' => 'sent',
+                'sent_at' => now(),
+                // We don't have a delivery webhook; mark delivered when SMTP send completes
+                'delivered_at' => now(),
+                'error_message' => null,
+            ]);
+            
+        } catch (\Exception $e) {
+            // Log the error but don't disrupt the email sending process
+            Log::error('Failed to log sent email: ' . $e->getMessage(), [
+                'exception' => $e,
+                'event' => class_basename($event),
+            ]);
+        }
+    }
+}

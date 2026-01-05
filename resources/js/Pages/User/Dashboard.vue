@@ -76,100 +76,40 @@ const getStatusBadgeClass = (status: string) => {
 
 const sidebarOpen = ref(false);
 
-// Date and Calendar
-const currentDate = ref(new Date());
-const selectedDate = ref(new Date());
-
-const greeting = computed(() => {
-    const hour = currentDate.value.getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-});
-
 const displayName = computed(() => {
     return props.userName || props.email.split('@')[0];
 });
 
-const formattedDate = computed(() => {
-    return currentDate.value.toLocaleDateString('en-PH', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-});
+// Document progress helpers
+const progressSteps = [
+    { key: 'Pending', label: 'Submitted', description: 'Request submitted and under review' },
+    { key: 'Verified', label: 'Verified', description: 'Information verified and approved' },
+    { key: 'Processing', label: 'Processing', description: 'Document is being prepared' },
+    { key: 'Ready', label: 'Ready', description: 'Document is ready for pickup' },
+    { key: 'Completed', label: 'Completed', description: 'Request completed successfully' }
+];
 
-const schoolYear = computed(() => {
-    const now = currentDate.value;
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    // School year starts in June (month 5) in the Philippines
-    if (month >= 5) {
-        return `${year}-${year + 1}`;
-    }
-    return `${year - 1}-${year}`;
-});
-
-// Calendar helpers
-const currentMonth = computed(() => {
-    return selectedDate.value.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
-});
-
-const calendarDays = computed(() => {
-    const year = selectedDate.value.getFullYear();
-    const month = selectedDate.value.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    const days: { date: number; isCurrentMonth: boolean; isToday: boolean }[] = [];
-    
-    // Previous month days
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
-    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-        days.push({ date: prevMonthLastDay - i, isCurrentMonth: false, isToday: false });
-    }
-    
-    // Current month days
-    const today = new Date();
-    for (let i = 1; i <= daysInMonth; i++) {
-        const isToday = today.getDate() === i && 
-                        today.getMonth() === month && 
-                        today.getFullYear() === year;
-        days.push({ date: i, isCurrentMonth: true, isToday });
-    }
-    
-    // Next month days
-    const remainingDays = 42 - days.length;
-    for (let i = 1; i <= remainingDays; i++) {
-        days.push({ date: i, isCurrentMonth: false, isToday: false });
-    }
-    
-    return days;
-});
-
-const prevMonth = () => {
-    const newDate = new Date(selectedDate.value);
-    newDate.setMonth(newDate.getMonth() - 1);
-    selectedDate.value = newDate;
+const getProgressPercentage = (status: string) => {
+    const statusIndex = progressSteps.findIndex(step => step.key === status);
+    if (statusIndex === -1) return 0;
+    return ((statusIndex + 1) / progressSteps.length) * 100;
 };
 
-const nextMonth = () => {
-    const newDate = new Date(selectedDate.value);
-    newDate.setMonth(newDate.getMonth() + 1);
-    selectedDate.value = newDate;
+const getCurrentStepIndex = (status: string) => {
+    const index = progressSteps.findIndex(step => step.key === status);
+    return index === -1 ? 0 : index;
 };
 
-// Update time every minute
-onMounted(() => {
-    const timer = setInterval(() => {
-        currentDate.value = new Date();
-    }, 60000);
-    
-    return () => clearInterval(timer);
-});
+const isStepCompleted = (stepIndex: number, currentStatus: string) => {
+    const currentIndex = getCurrentStepIndex(currentStatus);
+    return stepIndex <= currentIndex;
+};
+
+const isStepActive = (stepIndex: number, currentStatus: string) => {
+    return stepIndex === getCurrentStepIndex(currentStatus);
+};
+
+
 </script>
 
 <template>
@@ -282,64 +222,144 @@ onMounted(() => {
             <!-- Main Content -->
             <main class="flex-1 lg:ml-0">
                 <div class="p-4 lg:p-8">
-                    <!-- Greeting and Date Section -->
-                    <div class="mb-6 grid gap-6 lg:grid-cols-3">
-                        <!-- Greeting Card -->
-                        <div class="lg:col-span-2 rounded-xl bg-gradient-to-r from-bnhs-blue to-bnhs-blue-600 p-6 text-white shadow-lg">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-blue-100">{{ formattedDate }}</p>
-                                    <h1 class="mt-2 text-2xl font-bold lg:text-3xl">{{ greeting }}, {{ displayName }}!</h1>
-                                    <p class="mt-2 text-blue-100">Welcome to your dashboard. Track and manage your document requests.</p>
-                                    <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                        <span class="text-sm font-medium">School Year {{ schoolYear }}</span>
+                    <!-- Document Progress Section -->
+                    <div v-if="hasRequests && latestRequest" class="mb-6">
+                        <div class="rounded-xl bg-white p-6 shadow-sm">
+                            <div class="mb-6">
+                                <h2 class="text-xl font-bold text-gray-900">Document Request Progress</h2>
+                                <p class="mt-1 text-gray-600">Track the status of your latest document request</p>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="text-sm font-medium text-gray-500">Tracking ID:</span>
+                                    <span class="font-mono text-sm font-semibold text-bnhs-blue">{{ latestRequest.tracking_id }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="mb-6">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm font-medium text-gray-700">Progress</span>
+                                    <span class="text-sm font-medium text-gray-700">{{ Math.round(getProgressPercentage(latestRequest.status)) }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div 
+                                        class="bg-gradient-to-r from-bnhs-blue to-bnhs-blue-600 h-3 rounded-full transition-all duration-500 ease-out"
+                                        :style="{ width: getProgressPercentage(latestRequest.status) + '%' }"
+                                    ></div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Steps -->
+                            <div class="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
+                                <div 
+                                    v-for="(step, index) in progressSteps" 
+                                    :key="step.key"
+                                    class="flex items-center space-x-3 sm:flex-col sm:space-x-0 sm:space-y-2 sm:text-center flex-1"
+                                >
+                                    <div class="flex items-center">
+                                        <div 
+                                            :class="[
+                                                'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300',
+                                                isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                    ? 'bg-green-500 border-green-500 text-white'
+                                                    : isStepActive(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                    ? 'bg-bnhs-blue border-bnhs-blue text-white'
+                                                    : latestRequest.status === 'Rejected'
+                                                    ? 'bg-red-500 border-red-500 text-white'
+                                                    : 'bg-gray-100 border-gray-300 text-gray-500'
+                                            ]"
+                                        >
+                                            <svg v-if="isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            <svg v-else-if="latestRequest.status === 'Rejected'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                            <span v-else class="text-sm font-medium">{{ index + 1 }}</span>
+                                        </div>
+                                        
+                                        <!-- Connector line -->
+                                        <div 
+                                            v-if="index < progressSteps.length - 1"
+                                            :class="[
+                                                'h-0.5 w-8 ml-2 sm:hidden transition-all duration-300',
+                                                isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                    ? 'bg-green-500'
+                                                    : 'bg-gray-300'
+                                            ]"
+                                        ></div>
+                                    </div>
+                                    
+                                    <div class="flex-1 sm:flex-none">
+                                        <h3 
+                                            :class="[
+                                                'text-sm font-semibold transition-colors duration-300',
+                                                isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                    ? 'text-green-600'
+                                                    : isStepActive(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                    ? 'text-bnhs-blue'
+                                                    : latestRequest.status === 'Rejected'
+                                                    ? 'text-red-600'
+                                                    : 'text-gray-500'
+                                            ]"
+                                        >
+                                            {{ step.label }}
+                                        </h3>
+                                        <p class="text-xs text-gray-600 mt-1 sm:max-w-20 sm:text-center">{{ step.description }}</p>
                                     </div>
                                 </div>
-                                <div class="hidden sm:block">
-                                    <svg class="h-20 w-20 text-white/20" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 14l9-5-9-5-9 5 9 5z"></path>
-                                        <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path>
-                                    </svg>
+                            </div>
+
+                            <!-- Current Status Info -->
+                            <div class="mt-6 p-4 rounded-lg border border-gray-200 bg-gray-50">
+                                <div class="flex items-start gap-3">
+                                    <div 
+                                        :class="[
+                                            'flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0',
+                                            latestRequest.status === 'Rejected'
+                                                ? 'bg-red-100 text-red-600'
+                                                : latestRequest.status === 'Completed'
+                                                ? 'bg-green-100 text-green-600'
+                                                : 'bg-blue-100 text-bnhs-blue'
+                                        ]"
+                                    >
+                                        <svg v-if="latestRequest.status === 'Rejected'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                        <svg v-else-if="latestRequest.status === 'Completed'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-gray-900">Current Status: {{ latestRequest.status }}</h4>
+                                        <p class="text-sm text-gray-600 mt-1">{{ latestRequest.status_description }}</p>
+                                        <p class="text-xs text-gray-500 mt-2">Document Type: {{ latestRequest.document_type }}</p>
+                                        <div v-if="latestRequest.estimated_completion_date" class="text-xs text-gray-500 mt-1">
+                                            Estimated Completion: {{ latestRequest.estimated_completion_date }}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Mini Calendar -->
-                        <div class="rounded-xl bg-white p-4 shadow-sm">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-sm font-semibold text-gray-900">{{ currentMonth }}</h3>
-                                <div class="flex gap-1">
-                                    <button @click="prevMonth" class="rounded p-1 text-gray-500 hover:bg-gray-100">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                                        </svg>
-                                    </button>
-                                    <button @click="nextMonth" class="rounded p-1 text-gray-500 hover:bg-gray-100">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-7 gap-1 text-center text-xs">
-                                <div v-for="day in ['S', 'M', 'T', 'W', 'T', 'F', 'S']" :key="day" class="py-1 font-medium text-gray-500">
-                                    {{ day }}
-                                </div>
-                                <div
-                                    v-for="(day, index) in calendarDays"
-                                    :key="index"
-                                    :class="[
-                                        'py-1 rounded',
-                                        day.isCurrentMonth ? 'text-gray-900' : 'text-gray-300',
-                                        day.isToday ? 'bg-bnhs-blue text-white font-bold' : ''
-                                    ]"
+                    <!-- Welcome Message for New Users -->
+                    <div v-else class="mb-6">
+                        <div class="rounded-xl bg-gradient-to-r from-bnhs-blue to-bnhs-blue-600 p-6 text-white shadow-lg">
+                            <div class="text-center">
+                                <h1 class="text-2xl font-bold lg:text-3xl">Welcome, {{ displayName }}!</h1>
+                                <p class="mt-2 text-blue-100">Get started by submitting your first document request</p>
+                                <Link
+                                    :href="route('request.select')"
+                                    class="mt-4 inline-flex items-center gap-2 rounded-lg bg-white/20 px-6 py-3 text-sm font-medium text-white transition hover:bg-white/30"
                                 >
-                                    {{ day.date }}
-                                </div>
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Submit New Request
+                                </Link>
                             </div>
                         </div>
                     </div>
