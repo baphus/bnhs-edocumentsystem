@@ -1,7 +1,7 @@
 export default {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/resources/js'],
+  roots: ['<rootDir>/resources/js', '<rootDir>/tests'],
   moduleFileExtensions: ['js', 'ts', 'vue', 'json'],
   transform: {
     '^.+\\.vue$': '@vue/vue3-jest',
@@ -12,6 +12,7 @@ export default {
         target: 'ES2020',
         esModuleInterop: true,
         skipLibCheck: true,
+        jsx: 'preserve',
       },
     }],
     '^.+\\.js$': 'babel-jest',
@@ -19,6 +20,7 @@ export default {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/resources/js/$1',
     '^ziggy-js$': '<rootDir>/vendor/tightenco/ziggy',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   setupFilesAfterEnv: ['<rootDir>/resources/js/tests/setup.ts'],
   testMatch: [
@@ -31,9 +33,23 @@ export default {
     '!resources/js/app.ts',
     '!resources/js/bootstrap.ts',
     '!resources/js/ssr.ts',
+    '!resources/js/**/index.ts',
+  ],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/vendor/',
   ],
   testEnvironmentOptions: {
     customExportConditions: ['node', 'node-addons'],
+  },
+  // Performance thresholds for production
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 50,
+      statements: 50,
+    },
   },
 };
 

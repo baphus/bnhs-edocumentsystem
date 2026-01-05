@@ -1,0 +1,101 @@
+name: Production Deployment
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: bnhs_test
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        ports:
+          - 3306:3306
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: pdo_mysql, bcmath, ctype, json, mbstring
+        tools: composer:v2
+    
+    - name: Install Dependencies
+      run: |
+        composer install --no-interaction --prefer-dist
+        npm ci
+    
+    - name: Generate App Key
+      run: php artisan key:generate
+    
+    - name: Create Test Database
+      run: |
+        mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE bnhs_test"
+    
+    - name: Run Migrations
+      run: php artisan migrate --env=testing
+    
+    - name: Run PHP Tests
+      run: composer test
+    
+    - name: Run Frontend Tests
+      run: npm run test
+    
+    - name: Build Frontend
+      run: npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to Production
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      run: |
+        mkdir -p ~/.ssh
+        echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
+        
+        ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+          cd /var/www/bnhs
+          bash deploy.sh
+        EOF
+    
+    - name: Notify Slack
+      if: always()
+      uses: slackapi/slack-github-action@v1
+      with:
+        webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+        payload: |
+          {
+            "text": "BNHS Deployment ${{ job.status }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*BNHS Production Deployment*\nStatus: ${{ job.status }}\nCommit: ${{ github.sha }}"
+                }
+              }
+            ]
+          }
