@@ -11,15 +11,18 @@ const mobileSidebarOpen = ref(false);
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
-const isAdmin = computed(() => ['registrar', 'principal'].includes(user.value.role));
-const isSuperadmin = computed(() => user.value.role === 'superadmin');
+// Include legacy roles for robustness
+const isRegistrar = computed(() => ['registrar', 'principal'].includes(user.value.role));
+const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value.role));
 
 const getRoleBadge = (role: string) => {
     const badges: Record<string, { text: string; class: string }> = {
         registrar: { text: 'Registrar', class: 'bg-bnhs-blue-100 text-bnhs-blue-800' },
-        principal: { text: 'Principal', class: 'bg-bnhs-gold-100 text-bnhs-gold-800' },
-        student: { text: 'Student', class: 'bg-green-100 text-green-800' },
-        superadmin: { text: 'Superadmin', class: 'bg-purple-100 text-purple-800' },
+        principal: { text: 'Principal', class: 'bg-bnhs-gold-100 text-bnhs-gold-800' }, // Legacy
+        guest: { text: 'Guest', class: 'bg-green-100 text-green-800' },
+        student: { text: 'Student', class: 'bg-green-100 text-green-800' }, // Legacy
+        admin: { text: 'Admin', class: 'bg-purple-100 text-purple-800' },
+        superadmin: { text: 'Superadmin', class: 'bg-purple-100 text-purple-800' }, // Legacy
     };
     return badges[role] || { text: role, class: 'bg-gray-100 text-gray-800' };
 };
@@ -128,8 +131,8 @@ onUnmounted(() => {
 
                         <!-- Requests -->
                         <SidebarLink
-                            v-if="isAdmin || isSuperadmin"
-                            :href="isSuperadmin ? route('admin.requests.index') : route('registrar.requests.index')"
+                            v-if="isAdmin || isRegistrar"
+                            :href="isAdmin ? route('admin.requests.index') : route('registrar.requests.index')"
                             :active="route().current('registrar.requests.index') || route().current('registrar.requests.show') || route().current('admin.requests.index')"
                             :collapsed="sidebarCollapsed"
                             icon="requests"
@@ -137,9 +140,9 @@ onUnmounted(() => {
                             Requests
                         </SidebarLink>
 
-                        <!-- Users (Superadmin only) -->
+                        <!-- Users (Admin only) -->
                         <SidebarLink
-                            v-if="isSuperadmin"
+                            v-if="isAdmin"
                             :href="route('admin.users.index')"
                             :active="route().current('admin.users.index') || route().current('admin.users.show')"
                             :collapsed="sidebarCollapsed"
@@ -148,9 +151,9 @@ onUnmounted(() => {
                             Users
                         </SidebarLink>
 
-                        <!-- Document Types (Superadmin only) -->
+                        <!-- Document Types (Admin only) -->
                         <SidebarLink
-                            v-if="isSuperadmin"
+                            v-if="isAdmin"
                             :href="route('admin.document-types.index')"
                             :active="route().current('admin.document-types.index') || route().current('admin.document-types.create') || route().current('admin.document-types.edit')"
                             :collapsed="sidebarCollapsed"
@@ -159,9 +162,9 @@ onUnmounted(() => {
                             Document Types
                         </SidebarLink>
 
-                        <!-- System Logs (Superadmin only) -->
+                        <!-- System Logs (Admin only) -->
                         <SidebarLink
-                            v-if="isSuperadmin"
+                            v-if="isAdmin"
                             :href="route('admin.logs.index')"
                             :active="route().current('admin.logs.index')"
                             :collapsed="sidebarCollapsed"
@@ -170,9 +173,9 @@ onUnmounted(() => {
                             System Logs
                         </SidebarLink>
 
-                        <!-- Settings (Superadmin only) -->
+                        <!-- Settings (Admin only) -->
                         <SidebarLink
-                            v-if="isSuperadmin"
+                            v-if="isAdmin"
                             :href="route('admin.settings.index')"
                             :active="route().current('admin.settings.index')"
                             :collapsed="sidebarCollapsed"

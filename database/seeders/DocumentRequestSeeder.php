@@ -117,6 +117,7 @@ class DocumentRequestSeeder extends Seeder
                 'admin_notes' => $this->generateAdminNotes($status),
                 'processed_by' => $processedBy,
                 'otp_verified' => rand(0, 1) ? true : false,
+                'signature' => rand(0, 1) ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' : null,
                 'created_at' => $createdAt,
                 'updated_at' => $createdAt->copy()->addHours(rand(1, 48)),
             ]);

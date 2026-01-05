@@ -17,31 +17,25 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (!$request->user()) {
-            return redirect()->route('login');
+            return redirect()->route("login");
         }
 
         $userRole = $request->user()->role;
 
         foreach ($roles as $role) {
-            // 'admin' role in middleware matches both admin and registrar
-            // This allows shared routes for both roles
-            if ($role === 'admin' && in_array($userRole, ['admin', 'registrar'])) {
-                return $next($request);
-            }
-
-            // 'superadmin' middleware alias for backward compatibility
-            if ($role === 'superadmin' && $userRole === 'admin') {
-                return $next($request);
-            }
-
             // Direct role match
             if ($userRole === $role) {
                 return $next($request);
             }
+            
+            // Allow Admin to access Registrar routes if needed (optional, but good for hierarchy)
+            // If the route requires "registrar", and the user is "admin", allow it.
+            if ($role === "registrar" && $userRole === "admin") {
+                return $next($request);
+            }
         }
 
-        // User doesn't have the required role
-        abort(403, 'Unauthorized action.');
+        // User doesn"t have the required role
+        abort(403, "Unauthorized action.");
     }
 }
-

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Superadmin;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmailLog;
@@ -93,7 +93,7 @@ class SystemLogController extends Controller
                 'email' => $user->email,
             ]);
 
-        return Inertia::render('Admin/Superadmin/Logs/Index', [
+        return Inertia::render('Admin/Logs/Index', [
             'requestLogs' => $requestLogs,
             'emailLogs' => $emailLogs,
             'actions' => $actions,

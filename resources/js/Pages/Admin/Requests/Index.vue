@@ -14,7 +14,7 @@ import { DocumentRequest, PaginatedData } from '@/types';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
-const isSuperadmin = computed(() => user.value?.role === 'superadmin');
+const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 
 const props = defineProps<{
     requests: PaginatedData<DocumentRequest>;
@@ -249,7 +249,7 @@ const saveEdit = (requestId: number) => {
                     :filters="filters"
                     :statuses="statuses"
                     :documentTypes="documentTypes"
-                    :isSuperadmin="isSuperadmin"
+                    :isSuperadmin="isAdmin"
                     routePrefix="registrar.requests"
                     @export="exportCsv"
                     @createRequest="showCreateModal = true"
@@ -282,7 +282,7 @@ const saveEdit = (requestId: number) => {
                             >
                                 Apply
                             </PrimaryButton>
-                            <DangerButton @click="bulkDelete" class="whitespace-nowrap">
+                            <DangerButton v-if="isAdmin" @click="bulkDelete" class="whitespace-nowrap">
                                 Delete
                             </DangerButton>
                             <SecondaryButton @click="bulkExport(selectedRequests)" class="whitespace-nowrap">

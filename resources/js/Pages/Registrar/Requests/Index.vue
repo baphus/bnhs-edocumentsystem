@@ -1,64 +1,62 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { ref, computed, onMounted, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import DangerButton from '@/Components/DangerButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
+import DangerButton from '@/Components/DangerButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import Modal from '@/Components/Modal.vue';
 import RequestsTable from '@/Components/RequestsTable.vue';
-import { ref, computed, watch } from 'vue';
+import { DocumentRequest, PaginatedData } from '@/types';
 
-interface Request {
-    id: number;
-    tracking_id: string;
-    full_name: string;
-    email: string;
-    lrn: string;
-    document_type: string;
-    status: string;
-    otp_verified: boolean;
-    created_at: string;
-}
+const page = usePage();
+const user = computed(() => page.props.auth.user);
+const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 
-interface Props {
-    requests: {
-        data: Request[];
-        links: any[];
-        current_page: number;
-        last_page: number;
-        from?: number;
-        to?: number;
-        total?: number;
-        prev_page_url?: string;
-        next_page_url?: string;
-    };
-    documentTypes: { id: number; name: string }[];
-    statuses: string[];
+const props = defineProps<{
+    requests: PaginatedData<DocumentRequest>;
     filters: {
         search?: string;
         status?: string;
-        document_type?: string;
-        lrn?: string;
+        document_type_id?: number;
         from_date?: string;
         to_date?: string;
         sort_by?: string;
         sort_direction?: 'asc' | 'desc';
         per_page?: number;
     };
+    documentTypes: Array<{ id: number; name: string }>;
     gradeLevels?: Record<string, string>;
     trackStrands?: Record<string, Record<string, string>>;
     schoolYears?: Record<string, string>;
-}
-
-const props = defineProps<Props>();
+}>();
 
 const showCreateModal = ref(false);
 const requestsTable = ref();
 const bulkStatus = ref('');
 const bulkNotes = ref('');
+const editingRequest = ref<number | null>(null);
+const editForm = ref<Record<number, {
+    first_name: string;    middle_name: string;    last_name: string;
+    email: string;
+    lrn: string;
+    status: string;
+}>>({});
+
+const statuses = ['Pending', 'Verified', 'Processing', 'Ready', 'Completed', 'Rejected'];
+
+onMounted(() => {
+    editingRequest.value = null;
+    editForm.value = {};
+});
+
+// Watch requests to ensure editing state is cleared when data changes
+watch(() => props.requests.data, () => {
+    editingRequest.value = null;
+}, { deep: true });
 
 const form = useForm({
     email: '',
@@ -101,7 +99,7 @@ const handlePhotoUpload = (e: Event) => {
 };
 
 const submitForm = () => {
-    form.post(route('admin.requests.store'), {
+    form.post(route('registrar.requests.store'), {
         forceFormData: true,
         onSuccess: () => {
             showCreateModal.value = false;
@@ -123,7 +121,7 @@ const exportCsv = () => {
     Object.entries(props.filters).forEach(([key, value]) => {
         if (value) params.append(key, String(value));
     });
-    const url = route('admin.requests.export');
+    const url = route('registrar.requests.export');
     window.location.href = params.toString() ? `${url}?${params.toString()}` : url;
 };
 
@@ -134,6 +132,7 @@ const bulkUpdate = () => {
         return;
     }
 
+    // Check if at least one field is filled
     if (!bulkStatus.value && !bulkNotes.value) {
         alert('Please select a status or enter notes to update.');
         return;
@@ -148,14 +147,10 @@ const bulkUpdate = () => {
         return;
     }
 
-    const action = bulkStatus.value && bulkNotes.value ? 'status_and_notes' : 
-                   bulkStatus.value ? 'status_update' : 'add_notes';
-
-    router.post(route('admin.requests.bulk'), {
-        action,
+    router.post(route('registrar.requests.bulk-update'), {
         request_ids: selectedRequests,
         status: bulkStatus.value || undefined,
-        notes: bulkNotes.value || undefined,
+        admin_notes: bulkNotes.value || undefined,
     }, {
         onSuccess: () => {
             if (requestsTable.value) {
@@ -167,81 +162,24 @@ const bulkUpdate = () => {
     });
 };
 
-const bulkAction = (action: string) => {
+const bulkDelete = () => {
     const selectedRequests = requestsTable.value?.selectedRequests || [];
     if (selectedRequests.length === 0) {
         alert('Please select at least one request.');
         return;
     }
 
-    if (action === 'delete' && !confirm(`Delete ${selectedRequests.length} request(s)?`)) {
+    if (!confirm(`Are you sure you want to delete ${selectedRequests.length} request(s)? This action cannot be undone.`)) {
         return;
     }
 
-    router.post(route('admin.requests.bulk'), {
-        action,
+    router.post(route('registrar.requests.bulk-delete'), {
         request_ids: selectedRequests,
     }, {
         onSuccess: () => {
             if (requestsTable.value) {
                 requestsTable.value.clearSelection();
             }
-        },
-    });
-};
-
-const updateBulkStatus = () => {
-    const selectedRequests = requestsTable.value?.selectedRequests || [];
-    if (selectedRequests.length === 0) {
-        alert('Please select at least one request.');
-        return;
-    }
-
-    if (!bulkStatus.value) {
-        alert('Please select a status.');
-        return;
-    }
-
-    if (!confirm(`Update status to "${bulkStatus.value}" for ${selectedRequests.length} request(s)?`)) {
-        return;
-    }
-
-    router.post(route('admin.requests.bulk'), {
-        action: 'status_update',
-        request_ids: selectedRequests,
-        status: bulkStatus.value,
-    }, {
-        onSuccess: () => {
-            if (requestsTable.value) {
-                requestsTable.value.clearSelection();
-            }
-            bulkStatus.value = '';
-        },
-    });
-};
-
-const updateBulkNotes = () => {
-    const selectedRequests = requestsTable.value?.selectedRequests || [];
-    if (selectedRequests.length === 0) {
-        alert('Please select at least one request.');
-        return;
-    }
-
-    if (!bulkNotes.value) {
-        alert('Please enter notes.');
-        return;
-    }
-
-    router.post(route('admin.requests.bulk'), {
-        action: 'add_notes',
-        request_ids: selectedRequests,
-        notes: bulkNotes.value,
-    }, {
-        onSuccess: () => {
-            if (requestsTable.value) {
-                requestsTable.value.clearSelection();
-            }
-            bulkNotes.value = '';
         },
     });
 };
@@ -254,9 +192,42 @@ const bulkExport = (selectedRequests: number[]) => {
 
     const params = new URLSearchParams();
     selectedRequests.forEach(id => params.append('ids[]', id.toString()));
-    const url = route('admin.requests.export');
+    const url = route('registrar.requests.export');
     window.location.href = `${url}?${params.toString()}`;
 };
+
+const startEditing = (request: DocumentRequest) => {
+    editingRequest.value = request.id;
+    if (!editForm.value[request.id]) {
+        editForm.value[request.id] = {
+            first_name: request.first_name || '',
+            middle_name: request.middle_name || '',
+            last_name: request.last_name || '',
+            email: request.student_email || '',
+            lrn: request.lrn || '',
+            status: request.status || 'Pending',
+        };
+    }
+};
+
+const cancelEditing = (requestId: number) => {
+    editingRequest.value = null;
+    delete editForm.value[requestId];
+};
+
+const saveEdit = (requestId: number) => {
+    const form = editForm.value[requestId];
+    if (!form) return;
+
+    router.patch(route('registrar.requests.update', requestId), form, {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingRequest.value = null;
+            delete editForm.value[requestId];
+        },
+    });
+};
+
 </script>
 
 <template>
@@ -269,7 +240,7 @@ const bulkExport = (selectedRequests: number[]) => {
             </h2>
         </template>
 
-        <div class="py-8">
+        <div class="py-8 pb-12">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <!-- Unified Requests Table -->
                 <RequestsTable
@@ -278,7 +249,7 @@ const bulkExport = (selectedRequests: number[]) => {
                     :filters="filters"
                     :statuses="statuses"
                     :documentTypes="documentTypes"
-                    :isSuperadmin="true"
+                    :isSuperadmin="isAdmin"
                     routePrefix="registrar.requests"
                     @export="exportCsv"
                     @createRequest="showCreateModal = true"
@@ -311,7 +282,7 @@ const bulkExport = (selectedRequests: number[]) => {
                             >
                                 Apply
                             </PrimaryButton>
-                            <DangerButton @click="bulkAction('delete')" class="whitespace-nowrap">
+                            <DangerButton v-if="isAdmin" @click="bulkDelete" class="whitespace-nowrap">
                                 Delete
                             </DangerButton>
                             <SecondaryButton @click="bulkExport(selectedRequests)" class="whitespace-nowrap">
@@ -329,7 +300,7 @@ const bulkExport = (selectedRequests: number[]) => {
                     </template>
 
                     <!-- Table Rows Slot -->
-                    <template #table-rows="{ columnVisibility, isSelected, toggleSelect, getStatusColor }">
+                    <template #table-rows="{ columnVisibility, isSelected, toggleSelect, getStatusColor, formatDate }">
                         <tr v-for="request in requests.data" :key="request.id" class="hover:bg-gray-50">
                             <td v-if="columnVisibility.checkbox" class="whitespace-nowrap px-6 py-4">
                                 <input
@@ -341,60 +312,118 @@ const bulkExport = (selectedRequests: number[]) => {
                             </td>
                             <td v-if="columnVisibility.tracking_id" class="whitespace-nowrap px-6 py-4">
                                 <Link
-                                    :href="route('admin.requests.show', { id: request.id, ...filters })"
-                                    class="font-mono text-sm font-medium text-bnhs-blue hover:underline"
+                                    :href="route('registrar.requests.show', { id: request.id, ...filters })"
+                                    class="font-mono font-medium text-bnhs-blue hover:underline"
                                 >
                                     {{ request.tracking_id }}
                                 </Link>
                             </td>
-                            <td v-if="columnVisibility.requester" class="px-6 py-4 text-sm text-gray-900">
-                                <p class="font-medium">{{ request.full_name }}</p>
-                                <p class="text-sm text-gray-500">{{ request.email }}</p>
+                            <td v-if="columnVisibility.requester" class="px-6 py-4">
+                                <div v-if="!isSuperadmin || editingRequest !== request.id">
+                                    <p class="font-medium text-gray-900">
+                                        {{ request.first_name }} {{ request.middle_name ? request.middle_name.charAt(0) + '.' : '' }} {{ request.last_name }}
+                                    </p>
+                                    <p class="text-sm text-gray-500">{{ request.student_email }}</p>
+                                </div>
+                                <div v-else class="space-y-1">
+                                    <input
+                                        v-model="editForm[request.id].first_name"
+                                        type="text"
+                                        class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        placeholder="First Name"
+                                    />
+                                    <input
+                                        v-model="editForm[request.id].middle_name"
+                                        type="text"
+                                        class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        placeholder="Middle Name"
+                                    />
+                                    <input
+                                        v-model="editForm[request.id].last_name"
+                                        type="text"
+                                        class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                        placeholder="Last Name"
+                                    />
+                                </div>
                             </td>
-                            <td v-if="columnVisibility.lrn" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 font-mono">
-                                {{ request.lrn }}
+                            <td v-if="columnVisibility.lrn" class="whitespace-nowrap px-6 py-4 font-mono text-sm text-gray-500">
+                                <span v-if="!isSuperadmin || editingRequest !== request.id">{{ request.lrn }}</span>
+                                <input
+                                    v-else
+                                    v-model="editForm[request.id].lrn"
+                                    type="text"
+                                    maxlength="12"
+                                    class="w-24 rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    placeholder="LRN"
+                                />
                             </td>
                             <td v-if="columnVisibility.email" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                {{ request.email }}
+                                <span v-if="!isSuperadmin || editingRequest !== request.id">{{ request.student_email }}</span>
+                                <input
+                                    v-else
+                                    v-model="editForm[request.id].email"
+                                    type="email"
+                                    class="w-full rounded border-gray-300 px-2 py-1 text-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    placeholder="Email"
+                                />
                             </td>
-                            <td v-if="columnVisibility.document" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                {{ request.document_type }}
+                            <td v-if="columnVisibility.document" class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                                {{ request.document_type?.name }}
                             </td>
                             <td v-if="columnVisibility.status" class="whitespace-nowrap px-6 py-4">
-                                <span
-                                    :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]"
-                                >
+                                <span v-if="!isSuperadmin || editingRequest !== request.id" :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]">
                                     {{ request.status }}
                                 </span>
-                            </td>
-                            <td v-if="columnVisibility.otp_verified" class="whitespace-nowrap px-6 py-4">
-                                <span
-                                    :class="[
-                                        'rounded-full px-2 py-1 text-xs font-medium',
-                                        request.otp_verified
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-red-100 text-red-800',
-                                    ]"
+                                <select
+                                    v-else
+                                    v-model="editForm[request.id].status"
+                                    class="rounded border-gray-300 px-2 py-1 text-xs focus:border-bnhs-blue focus:ring-bnhs-blue"
                                 >
-                                    {{ request.otp_verified ? 'Yes' : 'No' }}
-                                </span>
+                                    <option v-for="status in statuses" :key="status" :value="status">
+                                        {{ status }}
+                                    </option>
+                                </select>
                             </td>
                             <td v-if="columnVisibility.date" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                {{ new Date(request.created_at).toLocaleDateString() }}
+                                {{ formatDate(request.created_at) }}
                             </td>
-                            <td v-if="columnVisibility.actions" class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                                <button
-                                    @click="router.visit(route('admin.requests.show', { id: request.id, ...filters }))"
-                                    class="text-bnhs-blue hover:text-bnhs-blue-600 mr-3"
-                                >
-                                    Edit
-                                </button>
-                                <Link
-                                    :href="route('admin.requests.show', { id: request.id, ...filters })"
-                                    class="text-bnhs-blue hover:text-bnhs-blue-600"
-                                >
-                                    View
-                                </Link>
+                            <td v-if="columnVisibility.actions" class="whitespace-nowrap px-6 py-4 text-right">
+                                <div v-if="isSuperadmin && editingRequest !== request.id" class="flex justify-end gap-2">
+                                    <button
+                                        @click="startEditing(request)"
+                                        class="text-bnhs-blue hover:underline text-sm"
+                                    >
+                                        Edit
+                                    </button>
+                                    <Link
+                                        :href="route('registrar.requests.show', { id: request.id, ...filters })"
+                                        class="text-bnhs-blue hover:underline text-sm"
+                                    >
+                                        View
+                                    </Link>
+                                </div>
+                                <div v-else-if="!isSuperadmin" class="flex justify-end">
+                                    <Link
+                                        :href="route('registrar.requests.show', request.id)"
+                                        class="text-bnhs-blue hover:underline text-sm"
+                                    >
+                                        View
+                                    </Link>
+                                </div>
+                                <div v-else class="flex justify-end gap-2">
+                                    <button
+                                        @click="saveEdit(request.id)"
+                                        class="text-green-600 hover:text-green-800 text-sm font-medium"
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        @click="cancelEditing(request.id)"
+                                        class="text-gray-600 hover:text-gray-800 text-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </template>

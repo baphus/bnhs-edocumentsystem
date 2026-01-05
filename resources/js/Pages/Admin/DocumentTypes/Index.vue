@@ -9,12 +9,32 @@ import { DocumentType } from '@/types';
 
 interface Props {
     documentTypes: DocumentType[];
+    filters: {
+        search?: string;
+        category?: string;
+        status?: string;
+    };
 }
 
 const props = defineProps<Props>();
 
+const search = ref(props.filters.search || '');
+const categoryFilter = ref(props.filters.category || '');
+const statusFilter = ref(props.filters.status || '');
+
 const showDeleteModal = ref(false);
 const documentTypeToDelete = ref<DocumentType | null>(null);
+
+const applyFilters = () => {
+    router.get(route('admin.document-types.index'), {
+        search: search.value || undefined,
+        category: categoryFilter.value || undefined,
+        status: statusFilter.value || undefined,
+    }, {
+        preserveState: true,
+        replace: true,
+    });
+};
 
 const confirmDelete = (documentType: DocumentType) => {
     documentTypeToDelete.value = documentType;
@@ -70,8 +90,51 @@ const formatDate = (date: string) => {
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <!-- Filters -->
+                <div class="mb-6 rounded-xl bg-white p-6 shadow">
+                    <div class="grid gap-4 sm:grid-cols-4">
+                        <div>
+                            <TextInput
+                                v-model="search"
+                                type="text"
+                                placeholder="Search by name..."
+                                class="w-full"
+                                @keyup.enter="applyFilters"
+                            />
+                        </div>
+                        <div>
+                            <select
+                                v-model="categoryFilter"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                @change="applyFilters"
+                            >
+                                <option value="">All Categories</option>
+                                <option value="Official">Official</option>
+                                <option value="Informal">Informal</option>
+                                <option value="Certified">Certified</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select
+                                v-model="statusFilter"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                @change="applyFilters"
+                            >
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div>
+                            <PrimaryButton @click="applyFilters" class="w-full justify-center">
+                                Apply Filters
+                            </PrimaryButton>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Document Types Table -->
-                <div class="overflow-x-auto bg-white shadow mb-6 rounded-xl">
+                <div class="overflow-hidden rounded-xl bg-white shadow">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -102,11 +165,11 @@ const formatDate = (date: string) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            <tr v-for="(documentType, index) in documentTypes" :key="documentType.id" class="hover:bg-gray-50" :class="{ 'last-row': index === documentTypes.length - 1 }">
-                                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900" :class="{ 'pb-5': index === documentTypes.length - 1 }">
+                            <tr v-for="documentType in documentTypes" :key="documentType.id" class="hover:bg-gray-50">
+                                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
                                     {{ documentType.name }}
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-4" :class="{ 'pb-5': index === documentTypes.length - 1 }">
+                                <td class="whitespace-nowrap px-6 py-4">
                                     <span
                                         :class="[
                                             'rounded-full px-2 py-1 text-xs font-medium',
@@ -116,16 +179,16 @@ const formatDate = (date: string) => {
                                         {{ documentType.category }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-500" :class="{ 'pb-5': index === documentTypes.length - 1 }">
+                                <td class="px-6 py-4 text-sm text-gray-500">
                                     <span v-if="documentType.description" class="line-clamp-2 max-w-xs">
                                         {{ documentType.description }}
                                     </span>
                                     <span v-else class="text-gray-400 italic">No description</span>
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500" :class="{ 'pb-5': index === documentTypes.length - 1 }">
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                     {{ documentType.processing_days || 3 }} day(s)
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-4" :class="{ 'pb-5': index === documentTypes.length - 1 }">
+                                <td class="whitespace-nowrap px-6 py-4">
                                     <span
                                         :class="[
                                             'rounded-full px-2 py-1 text-xs font-medium',
@@ -137,13 +200,13 @@ const formatDate = (date: string) => {
                                         {{ documentType.is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500" :class="{ 'pb-5': index === documentTypes.length - 1 }">
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                     {{ documentType.requests_count || 0 }}
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500" :class="{ 'pb-5': index === documentTypes.length - 1 }">
+                                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                     {{ formatDate(documentType.created_at) }}
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium" :class="{ 'pb-5': index === documentTypes.length - 1 }">
+                                <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                     <div class="flex justify-end gap-2">
                                         <Link
                                             :href="route('admin.document-types.edit', documentType.id)"
@@ -162,7 +225,7 @@ const formatDate = (date: string) => {
                             </tr>
                             <tr v-if="documentTypes.length === 0">
                                 <td colspan="8" class="px-6 py-8 text-center text-gray-500">
-                                    No document types found. Create your first document type to get started.
+                                    No document types found.
                                 </td>
                             </tr>
                         </tbody>

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Superadmin;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentType;
@@ -13,10 +13,30 @@ class DocumentTypeController extends Controller
     /**
      * Display list of document types.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $documentTypes = DocumentType::withCount('requests')
-            ->latest()
+        $query = DocumentType::withCount('requests');
+
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->category) {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->status) {
+             if ($request->status === 'active') {
+                $query->where('is_active', true);
+             } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+             }
+        }
+
+        $documentTypes = $query->latest()
             ->get()
             ->map(fn($dt) => [
                 'id' => $dt->id,
@@ -29,8 +49,9 @@ class DocumentTypeController extends Controller
                 'created_at' => $dt->created_at,
             ]);
 
-        return Inertia::render('Admin/Superadmin/DocumentTypes/Index', [
+        return Inertia::render('Admin/DocumentTypes/Index', [
             'documentTypes' => $documentTypes,
+            'filters' => $request->only(['search', 'category', 'status']),
         ]);
     }
 
@@ -39,7 +60,7 @@ class DocumentTypeController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Admin/Superadmin/DocumentTypes/Form');
+        return Inertia::render('Admin/DocumentTypes/Form');
     }
 
     /**
@@ -57,7 +78,7 @@ class DocumentTypeController extends Controller
 
         DocumentType::create($validated);
 
-        return redirect()->route('admin.superadmin.document-types.index')
+        return redirect()->route('admin.document-types.index')
             ->with('success', 'Document type created successfully.');
     }
 
@@ -66,7 +87,7 @@ class DocumentTypeController extends Controller
      */
     public function edit(DocumentType $documentType): Response
     {
-        return Inertia::render('Admin/Superadmin/DocumentTypes/Form', [
+        return Inertia::render('Admin/DocumentTypes/Form', [
             'documentType' => [
                 'id' => $documentType->id,
                 'name' => $documentType->name,

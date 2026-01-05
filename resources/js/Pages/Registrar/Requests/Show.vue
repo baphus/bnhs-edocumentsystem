@@ -24,7 +24,7 @@ const notesForm = useForm({
 });
 
 const updateStatus = () => {
-    statusForm.patch(route('admin.requests.update-status', props.request.id), {
+    statusForm.patch(route('registrar.requests.update-status', props.request.id), {
         onSuccess: () => {
             showStatusModal.value = false;
         },
@@ -32,7 +32,7 @@ const updateStatus = () => {
 };
 
 const updateNotes = () => {
-    notesForm.patch(route('admin.requests.update-notes', props.request.id), {
+    notesForm.patch(route('registrar.requests.update-notes', props.request.id), {
         onSuccess: () => {
             showNotesModal.value = false;
         },
@@ -110,7 +110,7 @@ const formatAction = (action: string) => {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center gap-4">
-                <button @click="router.visit(route('admin.requests.index'))" type="button" class="text-gray-500 hover:text-gray-700">
+                <button @click="router.visit(route('registrar.requests.index'))" type="button" class="text-gray-500 hover:text-gray-700">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>

@@ -41,6 +41,7 @@ class DocumentRequest extends Model
         'otp_code',
         'otp_expires_at',
         'otp_verified',
+        'signature',
     ];
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Registrar;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
@@ -8,7 +8,7 @@ use App\Models\DocumentType;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class AdminDashboardController extends Controller
+class DashboardController extends Controller
 {
     /**
      * Display the admin dashboard.
@@ -48,7 +48,7 @@ class AdminDashboardController extends Controller
                 'count' => $dt->requests_count,
             ]);
 
-        return Inertia::render('Admin/Dashboard', [
+        return Inertia::render('Registrar/Dashboard', [
             'stats' => $stats,
             'recentRequests' => $recentRequests,
             'documentTypeStats' => $documentTypeStats,

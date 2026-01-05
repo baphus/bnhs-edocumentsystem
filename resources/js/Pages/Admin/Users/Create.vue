@@ -8,8 +8,9 @@ const props = defineProps<{
 }>();
 
 const roleLabels: Record<string, string> = {
-    superadmin: 'Super Admin',
+    admin: 'Admin',
     registrar: 'Registrar',
+    guest: 'Guest',
 };
 
 const rolesWithLabels = computed(() => {

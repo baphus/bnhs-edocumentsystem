@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Superadmin;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
@@ -10,7 +10,7 @@ use App\Models\User;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class SuperadminDashboardController extends Controller
+class DashboardController extends Controller
 {
     /**
      * Display the superadmin dashboard.
@@ -68,7 +68,7 @@ class SuperadminDashboardController extends Controller
                 'created_at' => $req->created_at,
             ]);
 
-        return Inertia::render('Admin/Superadmin/Dashboard', [
+        return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
             'activityFeed' => $activityFeed,
             'recentRequests' => $recentRequests,

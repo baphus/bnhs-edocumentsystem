@@ -199,7 +199,6 @@ const getActionColor = (action: string) => {
                     <div class="mb-6 rounded-xl bg-white p-6 shadow">
                         <div class="grid gap-4 sm:grid-cols-5">
                             <div>
-                                <label class="mb-1 block text-sm font-medium text-gray-700">Action</label>
                                 <select
                                     v-model="actionFilter"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
@@ -211,7 +210,6 @@ const getActionColor = (action: string) => {
                                 </select>
                             </div>
                             <div>
-                                <label class="mb-1 block text-sm font-medium text-gray-700">User</label>
                                 <select
                                     v-model="userIdFilter"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
@@ -223,24 +221,24 @@ const getActionColor = (action: string) => {
                                 </select>
                             </div>
                             <div>
-                                <label class="mb-1 block text-sm font-medium text-gray-700">From Date</label>
-                                <input
+                                <TextInput
                                     v-model="fromDateFilter"
                                     type="date"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    class="w-full"
+                                    placeholder="From Date"
                                 />
                             </div>
                             <div>
-                                <label class="mb-1 block text-sm font-medium text-gray-700">To Date</label>
-                                <input
+                                <TextInput
                                     v-model="toDateFilter"
                                     type="date"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    class="w-full"
+                                    placeholder="To Date"
                                 />
                             </div>
-                            <div class="flex items-end gap-2">
-                                <PrimaryButton @click="applyRequestFilters" class="flex-1"> Apply </PrimaryButton>
-                                <SecondaryButton @click="clearRequestFilters" class="flex-1"> Clear </SecondaryButton>
+                            <div class="flex gap-2">
+                                <PrimaryButton @click="applyRequestFilters" class="flex-1 justify-center"> Apply </PrimaryButton>
+                                <SecondaryButton @click="clearRequestFilters" class="flex-1 justify-center"> Clear </SecondaryButton>
                             </div>
                         </div>
                     </div>
@@ -342,7 +340,6 @@ const getActionColor = (action: string) => {
                     <div class="mb-6 rounded-xl bg-white p-6 shadow">
                         <div class="grid gap-4 sm:grid-cols-4">
                             <div>
-                                <label class="mb-1 block text-sm font-medium text-gray-700">Status</label>
                                 <select
                                     v-model="emailStatusFilter"
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
@@ -355,24 +352,24 @@ const getActionColor = (action: string) => {
                                 </select>
                             </div>
                             <div>
-                                <label class="mb-1 block text-sm font-medium text-gray-700">From Date</label>
-                                <input
+                                <TextInput
                                     v-model="emailFromDateFilter"
                                     type="date"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    class="w-full"
+                                    placeholder="From Date"
                                 />
                             </div>
                             <div>
-                                <label class="mb-1 block text-sm font-medium text-gray-700">To Date</label>
-                                <input
+                                <TextInput
                                     v-model="emailToDateFilter"
                                     type="date"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    class="w-full"
+                                    placeholder="To Date"
                                 />
                             </div>
-                            <div class="flex items-end gap-2">
-                                <PrimaryButton @click="applyEmailFilters" class="flex-1"> Apply </PrimaryButton>
-                                <SecondaryButton @click="clearEmailFilters" class="flex-1"> Clear </SecondaryButton>
+                            <div class="flex gap-2">
+                                <PrimaryButton @click="applyEmailFilters" class="flex-1 justify-center"> Apply </PrimaryButton>
+                                <SecondaryButton @click="clearEmailFilters" class="flex-1 justify-center"> Clear </SecondaryButton>
                             </div>
                         </div>
                     </div>

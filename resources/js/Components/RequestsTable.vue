@@ -178,22 +178,21 @@ defineExpose({
 </script>
 
 <template>
-    <div class="relative">
-        <!-- Requests Table with Integrated Header -->
-        <div class="mt-6 overflow-hidden rounded-xl bg-white shadow">
-            <!-- Table Header with Filters and Actions -->
-            <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
+    <div>
+        <!-- Filters Card -->
+        <div class="mb-6 rounded-xl bg-white p-6 shadow">
+            <div class="flex flex-col gap-4">
+                <!-- Top Row: Search and Actions -->
                 <div class="flex flex-wrap items-center justify-between gap-4">
-                    <!-- Left Side: Search and Filter Button -->
-                    <div class="flex flex-1 items-center gap-3 min-w-0">
-                        <div class="flex-1 max-w-md">
-                            <input
-                                type="text"
-                                v-model="search"
-                                placeholder="Search by tracking ID, name, or LRN..."
-                                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                            />
-                        </div>
+                    <div class="flex-1 max-w-md">
+                        <input
+                            type="text"
+                            v-model="search"
+                            placeholder="Search by tracking ID, name, or LRN..."
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                        />
+                    </div>
+                    <div class="flex items-center gap-2">
                         <SecondaryButton @click="showFilters = !showFilters" class="whitespace-nowrap">
                             <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -203,10 +202,7 @@ defineExpose({
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </SecondaryButton>
-                    </div>
 
-                    <!-- Right Side: Action Buttons -->
-                    <div class="flex items-center gap-2">
                         <!-- View Settings Toggle -->
                         <div class="relative">
                             <SecondaryButton @click="showViewSettings = !showViewSettings" class="whitespace-nowrap" title="Toggle Columns">
@@ -264,7 +260,7 @@ defineExpose({
                                 </div>
                             </div>
                         </div>
-                        
+
                         <PrimaryButton @click="$emit('createRequest')" class="whitespace-nowrap">
                             <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -280,69 +276,73 @@ defineExpose({
                     </div>
                 </div>
 
-                <!-- Expandable Filters Section -->
+                <!-- Expandable Filters -->
                 <transition name="slide-down">
-                    <div v-if="showFilters" class="mt-4 pt-4 border-t border-gray-200">
+                    <div v-if="showFilters" class="pt-4 border-t border-gray-200">
                         <div class="grid gap-4 sm:grid-cols-4">
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                            <select
-                                id="status"
-                                v-model="statusFilter"
-                                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                            >
-                                <option value="">All Statuses</option>
-                                <option v-for="status in statuses" :key="status" :value="status">
-                                    {{ status }}
-                                </option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="docType" class="block text-sm font-medium text-gray-700 mb-1">Document Type</label>
-                            <select
-                                id="docType"
-                                v-model="documentTypeFilter"
-                                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                            >
-                                <option value="">All Types</option>
-                                <option v-for="docType in documentTypes" :key="docType.id" :value="docType.id">
-                                    {{ docType.name }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                            <div class="flex items-center gap-2">
-                                <input
-                                    id="fromDate"
-                                    type="date"
-                                    v-model="fromDateFilter"
-                                    class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                />
-                                <span class="text-gray-500 font-medium">to</span>
-                                <input
-                                    id="toDate"
-                                    type="date"
-                                    v-model="toDateFilter"
-                                    class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
-                                />
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select
+                                    id="status"
+                                    v-model="statusFilter"
+                                    class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option v-for="status in statuses" :key="status" :value="status">
+                                        {{ status }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="docType" class="block text-sm font-medium text-gray-700 mb-1">Document Type</label>
+                                <select
+                                    id="docType"
+                                    v-model="documentTypeFilter"
+                                    class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                >
+                                    <option value="">All Types</option>
+                                    <option v-for="docType in documentTypes" :key="docType.id" :value="docType.id">
+                                        {{ docType.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        id="fromDate"
+                                        type="date"
+                                        v-model="fromDateFilter"
+                                        class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    />
+                                    <span class="text-gray-500 font-medium">to</span>
+                                    <input
+                                        id="toDate"
+                                        type="date"
+                                        v-model="toDateFilter"
+                                        class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
+                                    />
+                                </div>
+                            </div>
+                            <div class="flex items-end">
+                                <button
+                                    v-if="filters.search || filters.status || filters.document_type_id || filters.document_type || filters.from_date || filters.to_date"
+                                    @click="clearFilters"
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                    Clear Filters
+                                </button>
                             </div>
                         </div>
-                        <div class="flex items-end">
-                            <button
-                                v-if="filters.search || filters.status || filters.document_type_id || filters.document_type || filters.from_date || filters.to_date"
-                                @click="clearFilters"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                            >
-                                Clear Filters
-                            </button>
-                        </div>
-                    </div>
                     </div>
                 </transition>
             </div>
+        </div>
 
-            <!-- Table Content -->
+
+
+        <!-- Table Card -->
+        <div class="overflow-hidden rounded-xl bg-white shadow">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">

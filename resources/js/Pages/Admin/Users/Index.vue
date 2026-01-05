@@ -6,7 +6,6 @@ import { User, PaginatedData } from '@/types';
 
 const props = defineProps<{
     users: PaginatedData<User>;
-    canManageUsers: boolean;
 }>();
 
 const showDeleteModal = ref(false);
@@ -28,12 +27,19 @@ const deleteUser = () => {
     }
 };
 
+const impersonateUser = (user: User) => {
+    if (confirm(`Are you sure you want to impersonate ${user.name}?`)) {
+        router.post(route('admin.users.impersonate', user.id));
+    }
+};
+
 const getRoleColor = (role: string) => {
     const colors: Record<string, string> = {
-        'superadmin': 'bg-purple-100 text-purple-800',
+        'admin': 'bg-purple-100 text-purple-800',
         'registrar': 'bg-blue-100 text-blue-800',
+        'guest': 'bg-gray-100 text-gray-800',
     };
-    return colors[role] || colors['registrar'];
+    return colors[role] || colors['guest'];
 };
 
 const formatDate = (date: string) => {
@@ -55,7 +61,6 @@ const formatDate = (date: string) => {
                     Manage Users
                 </h2>
                 <Link
-                    v-if="canManageUsers"
                     :href="route('admin.users.create')"
                     class="flex items-center gap-2 rounded-lg bg-bnhs-blue px-4 py-2 text-sm font-medium text-white hover:bg-bnhs-blue-600"
                 >
@@ -68,7 +73,7 @@ const formatDate = (date: string) => {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="overflow-hidden rounded-xl bg-white shadow">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -85,7 +90,7 @@ const formatDate = (date: string) => {
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Created
                                 </th>
-                                <th v-if="canManageUsers" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Actions
                                 </th>
                             </tr>
@@ -97,7 +102,10 @@ const formatDate = (date: string) => {
                                         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-bnhs-blue text-sm font-medium text-white">
                                             {{ user.name.charAt(0).toUpperCase() }}
                                         </div>
-                                        <span class="font-medium text-gray-900">{{ user.name }}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-medium text-gray-900">{{ user.name }}</span>
+                                            <span v-if="user.id === $page.props.auth.user.id" class="text-xs text-gray-500">(You)</span>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
@@ -111,8 +119,15 @@ const formatDate = (date: string) => {
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                     {{ formatDate(user.created_at) }}
                                 </td>
-                                <td v-if="canManageUsers" class="whitespace-nowrap px-6 py-4 text-right">
-                                    <div v-if="user.role !== 'superadmin'" class="flex items-center justify-end gap-3">
+                                <td class="whitespace-nowrap px-6 py-4 text-right">
+                                    <div v-if="user.id !== $page.props.auth.user.id" class="flex items-center justify-end gap-3">
+                                        <button
+                                            @click="impersonateUser(user)"
+                                            class="text-purple-600 hover:underline"
+                                            title="Impersonate User"
+                                        >
+                                            Impersonate
+                                        </button>
                                         <Link
                                             :href="route('admin.users.edit', user.id)"
                                             class="text-bnhs-blue hover:underline"
@@ -126,11 +141,10 @@ const formatDate = (date: string) => {
                                             Delete
                                         </button>
                                     </div>
-                                    <span v-else class="text-sm text-gray-400">System managed</span>
                                 </td>
                             </tr>
                             <tr v-if="users.data.length === 0">
-                                <td :colspan="canManageUsers ? 5 : 4" class="px-6 py-12 text-center text-gray-500">
+                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                                     No users found
                                 </td>
                             </tr>

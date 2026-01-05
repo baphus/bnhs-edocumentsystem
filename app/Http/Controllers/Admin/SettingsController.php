@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Superadmin;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
@@ -23,7 +23,7 @@ class SettingsController extends Controller
             'maintenance_mode' => Setting::get('maintenance_mode', false),
         ];
 
-        return Inertia::render('Admin/Superadmin/Settings', [
+        return Inertia::render('Admin/Settings', [
             'settings' => $settings,
         ]);
     }
