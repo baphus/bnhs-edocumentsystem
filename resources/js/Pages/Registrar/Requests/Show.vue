@@ -313,6 +313,23 @@ const formatAction = (action: string) => {
                             </div>
                         </div>
 
+                        <!-- Digital Signature -->
+                        <div v-if="request.signature" class="rounded-xl bg-white p-6 shadow">
+                            <h3 class="flex items-center gap-2 font-semibold text-gray-900">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                                Digital Signature
+                            </h3>
+                            <div class="mt-4">
+                                <img
+                                    :src="request.signature"
+                                    alt="Student's signature"
+                                    class="max-h-24 max-w-full rounded-lg border border-gray-200 object-contain p-2"
+                                />
+                            </div>
+                        </div>
+
                         <!-- Admin Notes -->
                         <div v-if="request.admin_notes" class="rounded-xl bg-bnhs-blue-50 p-6 shadow">
                             <h3 class="flex items-center gap-2 font-semibold text-bnhs-blue">

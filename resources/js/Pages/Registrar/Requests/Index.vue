@@ -15,6 +15,7 @@ import { DocumentRequest, PaginatedData } from '@/types';
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
+const isSuperadmin = computed(() => user.value?.role === 'superadmin');
 
 const props = defineProps<{
     requests: PaginatedData<DocumentRequest>;

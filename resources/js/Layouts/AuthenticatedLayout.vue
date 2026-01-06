@@ -162,6 +162,17 @@ onUnmounted(() => {
                             Document Types
                         </SidebarLink>
 
+                        <!-- Educational Tracks (Admin only) -->
+                        <SidebarLink
+                            v-if="isAdmin"
+                            :href="route('admin.tracks.index')"
+                            :active="route().current('admin.tracks.index') || route().current('admin.tracks.create') || route().current('admin.tracks.edit')"
+                            :collapsed="sidebarCollapsed"
+                            icon="academic-cap"
+                        >
+                            Educational Tracks
+                        </SidebarLink>
+
                         <!-- Audit Logs (Admin only) -->
                         <SidebarLink
                             v-if="isAdmin"

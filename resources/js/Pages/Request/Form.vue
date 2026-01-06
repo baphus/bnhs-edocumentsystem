@@ -7,6 +7,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 const props = defineProps<{
     documentType: DocumentType;
     email: string;
+    trackStrands: Record<string, Record<string, string>>;
 }>();
 
 const form = useForm({
@@ -109,17 +110,6 @@ const gradeLevels = [
     { value: 'Grade 10', label: 'Grade 10' },
     { value: 'Grade 11', label: 'Grade 11' },
     { value: 'Grade 12', label: 'Grade 12' },
-];
-
-const trackStrands = [
-    { value: 'ABM', label: 'Accountancy, Business & Management (ABM)' },
-    { value: 'HUMSS', label: 'Humanities and Social Sciences (HUMSS)' },
-    { value: 'STEM', label: 'Science, Technology, Engineering & Mathematics (STEM)' },
-    { value: 'GAS', label: 'General Academic Strand (GAS)' },
-    { value: 'TVL-ICT', label: 'TVL - Information & Communication Technology' },
-    { value: 'TVL-HE', label: 'TVL - Home Economics' },
-    { value: 'TVL-IA', label: 'TVL - Industrial Arts' },
-    { value: 'TVL-AFA', label: 'TVL - Agri-Fishery Arts' },
 ];
 
 const purposeOptions = [
@@ -373,9 +363,11 @@ const submitRequest = () => {
                                     class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
                                 >
                                     <option value="">Select Track/Strand</option>
-                                    <option v-for="strand in trackStrands" :key="strand.value" :value="strand.value">
-                                        {{ strand.label }}
-                                    </option>
+                                    <optgroup v-for="(strands, category) in trackStrands" :key="category" :label="category">
+                                        <option v-for="(label, value) in strands" :key="value" :value="value">
+                                            {{ label }}
+                                        </option>
+                                    </optgroup>
                                 </select>
                                 <p v-if="form.errors.track_strand" class="mt-1 text-sm text-red-600">{{ form.errors.track_strand }}</p>
                             </div>

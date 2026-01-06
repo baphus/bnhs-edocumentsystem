@@ -33,6 +33,7 @@ class DocumentRequest extends Model
         'document_type_id',
         'purpose',
         'quantity',
+        'signature',
         'status',
         'estimated_completion_date',
         'completed_at',
@@ -41,7 +42,6 @@ class DocumentRequest extends Model
         'otp_code',
         'otp_expires_at',
         'otp_verified',
-        'signature',
     ];
 
     /**

@@ -299,6 +299,7 @@ class RequestController extends Controller
                 "track_strand" => $documentRequest->track_strand,
                 "school_year_last_attended" => $documentRequest->school_year_last_attended,
                 "photo_path" => $documentRequest->photo_path,
+                "signature" => $documentRequest->signature,
                 "document_type" => $documentRequest->documentType ? ["name" => $documentRequest->documentType->name] : null,
                 "document_category" => $documentRequest->documentType->category ?? null,
                 "purpose" => $documentRequest->purpose,
@@ -541,28 +542,21 @@ class RequestController extends Controller
     /**
      * Get available tracks/strands for SHS.
      */
-    private function getTrackStrands(): array
+    private function getTrackStrands()
     {
-        return [
-            "Academic Track" => [
-                "STEM" => "Science, Technology, Engineering, and Mathematics (STEM)",
-                "ABM" => "Accountancy, Business, and Management (ABM)",
-                "HUMSS" => "Humanities and Social Sciences (HUMSS)",
-                "GAS" => "General Academic Strand (GAS)",
-            ],
-            "Technical-Vocational-Livelihood Track" => [
-                "TVL-HE" => "TVL - Home Economics",
-                "TVL-ICT" => "TVL - Information and Communications Technology",
-                "TVL-IA" => "TVL - Industrial Arts",
-                "TVL-AFA" => "TVL - Agri-Fishery Arts",
-            ],
-            "Sports Track" => [
-                "Sports" => "Sports Track",
-            ],
-            "Arts and Design Track" => [
-                "Arts" => "Arts and Design Track",
-            ],
-        ];
+        // Fetch active tracks from DB and group by category
+        $tracks = \App\Models\Track::where('is_active', true)
+            ->get()
+            ->groupBy('category');
+
+        $formatted = [];
+        foreach ($tracks as $category => $categoryTracks) {
+            $formatted[$category] = $categoryTracks->mapWithKeys(function ($track) {
+                return [$track->code => $track->name];
+            })->toArray();
+        }
+
+        return $formatted;
     }
 
     /**

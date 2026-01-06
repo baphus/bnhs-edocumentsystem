@@ -4,7 +4,8 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    role: 'admin' | 'registrar' | 'guest';
+    role: 'admin' | 'registrar' | 'guest' | 'superadmin' | 'principal' | 'student';
+    status?: string;
     email_verified_at?: string;
     created_at: string;
     updated_at: string;
@@ -42,9 +43,21 @@ export interface DocumentRequest {
     admin_notes: string | null;
     otp_code: string | null;
     otp_expires_at: string | null;
+    otp_verified: boolean;
+    signature: string | null;
     created_at: string;
     updated_at: string;
     request_logs?: RequestLog[];
+}
+
+export interface Track {
+    id: number;
+    category: string;
+    code: string;
+    name: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface RequestLog {

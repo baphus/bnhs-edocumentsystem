@@ -209,6 +209,7 @@ class RequestController extends Controller
                 "track_strand" => $documentRequest->track_strand,
                 "school_year_last_attended" => $documentRequest->school_year_last_attended,
                 "photo_path" => $documentRequest->photo_path,
+                "signature" => $documentRequest->signature,
                 "document_type" => $documentRequest->documentType ? ["name" => $documentRequest->documentType->name] : null,
                 "document_category" => $documentRequest->documentType->category ?? null,
                 "purpose" => $documentRequest->purpose,
@@ -587,15 +588,19 @@ class RequestController extends Controller
 
     private function getTrackStrands()
     {
-        return [
-            "STEM" => "STEM (Science, Technology, Engineering, and Mathematics)",
-            "ABM" => "ABM (Accountancy, Business, and Management)",
-            "HUMSS" => "HUMSS (Humanities and Social Sciences)",
-            "GAS" => "GAS (General Academic Strand)",
-            "TVL-ICT" => "TVL - ICT (Information and Communications Technology)",
-            "TVL-HE" => "TVL - HE (Home Economics)",
-            "TVL-IA" => "TVL - IA (Industrial Arts)",
-        ];
+        // Fetch active tracks from DB and group by category
+        $tracks = \App\Models\Track::where('is_active', true)
+            ->get()
+            ->groupBy('category');
+
+        $formatted = [];
+        foreach ($tracks as $category => $categoryTracks) {
+            $formatted[$category] = $categoryTracks->mapWithKeys(function ($track) {
+                return [$track->code => $track->name];
+            })->toArray();
+        }
+
+        return $formatted;
     }
 
     private function getSchoolYears()

@@ -159,6 +159,7 @@ class DocumentRequestController extends Controller
             'purpose' => 'required|string|max:1000',
             'quantity' => 'nullable|integer|min:1|max:10',
             'document_type_id' => 'required|exists:document_types,id',
+            'signature' => 'required|string',
         ], [
             'lrn.regex' => 'LRN must be exactly 12 digits.',
         ]);
@@ -198,6 +199,7 @@ class DocumentRequestController extends Controller
             'status' => 'Pending',
             'estimated_completion_date' => $estimatedCompletionDate,
             'otp_verified' => true,
+            'signature' => $validated['signature'],
         ]);
 
         // Load document type relationship for email
@@ -265,28 +267,21 @@ class DocumentRequestController extends Controller
     /**
      * Get available tracks/strands for SHS.
      */
-    private function getTrackStrands(): array
+    private function getTrackStrands()
     {
-        return [
-            'Academic Track' => [
-                'STEM' => 'Science, Technology, Engineering, and Mathematics (STEM)',
-                'ABM' => 'Accountancy, Business, and Management (ABM)',
-                'HUMSS' => 'Humanities and Social Sciences (HUMSS)',
-                'GAS' => 'General Academic Strand (GAS)',
-            ],
-            'Technical-Vocational-Livelihood Track' => [
-                'TVL-HE' => 'TVL - Home Economics',
-                'TVL-ICT' => 'TVL - Information and Communications Technology',
-                'TVL-IA' => 'TVL - Industrial Arts',
-                'TVL-AFA' => 'TVL - Agri-Fishery Arts',
-            ],
-            'Sports Track' => [
-                'Sports' => 'Sports Track',
-            ],
-            'Arts and Design Track' => [
-                'Arts' => 'Arts and Design Track',
-            ],
-        ];
+        // Fetch active tracks from DB and group by category
+        $tracks = \App\Models\Track::where('is_active', true)
+            ->get()
+            ->groupBy('category');
+
+        $formatted = [];
+        foreach ($tracks as $category => $categoryTracks) {
+            $formatted[$category] = $categoryTracks->mapWithKeys(function ($track) {
+                return [$track->code => $track->name];
+            })->toArray();
+        }
+
+        return $formatted;
     }
 
     /**

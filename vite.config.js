@@ -27,11 +27,16 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 // Code splitting for better caching
-                manualChunks: {
-                    'vue': ['vue'],
-                    'inertia': ['@inertiajs/vue3'],
-                    'ui': ['@headlessui/vue', '@heroicons/vue'],
-                    'charts': ['chart.js', 'vue-chartjs'],
+                manualChunks: (id) => {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('chart.js') || id.includes('vue-chartjs')) {
+                            return 'charts';
+                        }
+                        if (id.includes('@headlessui') || id.includes('@heroicons')) {
+                            return 'ui';
+                        }
+                        return 'vendor';
+                    }
                 },
                 // Asset naming
                 assetFileNames: (assetInfo) => {

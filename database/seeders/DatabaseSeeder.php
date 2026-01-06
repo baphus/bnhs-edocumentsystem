@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             UserSeeder::class,
             DocumentTypeSeeder::class,
+            TrackSeeder::class,
             SettingsSeeder::class,
             
             // Sample data seeders
