@@ -31,29 +31,43 @@ class LogSentEmail
             
             // Get subject
             $subject = $message->getSubject() ?? 'No Subject';
+
+            // Extract document_request_id from the email if available
+            $documentRequestId = null;
             
-            // Check if this exact email was already logged (prevent duplicates)
-            // Check within the last 10 seconds to catch rapid duplicate events
+            // Try to extract document request from the mailable
+            $mailable = $event->sent;
+            if ($mailable && property_exists($mailable, 'documentRequest') && $mailable->documentRequest) {
+                $documentRequestId = $mailable->documentRequest->id;
+            }
+
+            // Promote any previously queued log for this email to a sent log
+            $queuedLog = EmailLog::where('recipient_email', $recipientEmail)
+                ->where('subject', $subject)
+                ->where('status', 'queued')
+                ->latest()
+                ->first();
+
+            if ($queuedLog) {
+                $queuedLog->update([
+                    'document_request_id' => $documentRequestId ?? $queuedLog->document_request_id,
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    // We don't have a delivery webhook; mark delivered when SMTP send completes
+                    'delivered_at' => now(),
+                    'error_message' => null,
+                ]);
+                return;
+            }
+            
+            // Check if this exact email was already logged very recently (prevent duplicates)
             $recentLog = EmailLog::where('recipient_email', $recipientEmail)
                 ->where('subject', $subject)
                 ->where('created_at', '>', now()->subSeconds(10))
                 ->first();
             
             if ($recentLog) {
-                // Already logged this email, skip to prevent duplicates
                 return;
-            }
-            
-            // Extract document_request_id from the email if available
-            $documentRequestId = null;
-            
-            // Try to extract document request from the mailable
-            $mailable = $event->sent;
-            if ($mailable) {
-                // Check if mailable has documentRequest property
-                if (property_exists($mailable, 'documentRequest') && $mailable->documentRequest) {
-                    $documentRequestId = $mailable->documentRequest->id;
-                }
             }
             
             // Create email log entry

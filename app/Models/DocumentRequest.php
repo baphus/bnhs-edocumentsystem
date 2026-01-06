@@ -66,6 +66,14 @@ class DocumentRequest extends Model
                 $request->tracking_id = static::generateTrackingId();
             }
         });
+
+        static::created(function (DocumentRequest $request) {
+            $request->logs()->create([
+                'action' => 'request_created',
+                'description' => 'Document request has been submitted and is pending verification.',
+                'new_value' => 'Pending',
+            ]);
+        });
     }
 
     /**
