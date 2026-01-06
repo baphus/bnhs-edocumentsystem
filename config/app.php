@@ -123,4 +123,20 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Dev Tools
+    |--------------------------------------------------------------------------
+    |
+    | Flags to make local/dev work faster. Ensure these stay disabled in
+    | production to prevent bypassing OTP flows.
+    |
+    */
+
+    'dev_tools' => [
+        'enabled' => env('DEV_TOOLS_ENABLED', false),
+        'bypass_otp' => env('DEV_BYPASS_OTP', false),
+        'default_otp_code' => env('DEV_DEFAULT_OTP', '000000'),
+    ],
+
 ];

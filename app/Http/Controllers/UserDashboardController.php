@@ -58,10 +58,25 @@ class UserDashboardController extends Controller
      */
     public function verifyOtp(Request $request): RedirectResponse
     {
-        $request->validate([
+        $rules = [
             'email' => 'required|email',
-            'otp' => 'required|string|size:6',
-        ]);
+        ];
+
+        if (!$this->isOtpBypassEnabled()) {
+            $rules['otp'] = 'required|string|size:6';
+        }
+
+        $request->validate($rules);
+
+        if ($this->isOtpBypassEnabled()) {
+            session([
+                'dashboard_verified_email' => $request->email,
+                'dashboard_verified_at' => now()->toISOString(),
+            ]);
+
+            return redirect()->route('user.dashboard.index')
+                ->with('success', '[DEV] OTP bypass enabled. Dashboard auto-verified.');
+        }
 
         $result = $this->otpService->verifyOtp($request->email, $request->otp, 'dashboard');
 
@@ -151,5 +166,10 @@ class UserDashboardController extends Controller
             'Rejected' => 'Your request has been rejected. Please check the admin notes for details.',
             default => 'Status update available.',
         };
+    }
+
+    private function isOtpBypassEnabled(): bool
+    {
+        return (bool) (config('app.dev_tools.enabled') && config('app.dev_tools.bypass_otp'));
     }
 }

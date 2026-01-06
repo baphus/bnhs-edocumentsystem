@@ -13,6 +13,19 @@ class OtpService
      */
     public function sendOtp(string $email, string $purpose = 'request'): array
     {
+        // Short-circuit for dev environments so flows are faster during QA
+        if ($this->isOtpBypassEnabled()) {
+            $otp = Otp::generateFor($email, $purpose);
+            $otp->update(['code' => config('app.dev_tools.default_otp_code')]);
+
+            return [
+                'success' => true,
+                'message' => '[DEV] OTP bypass enabled. Use the default code to proceed.',
+                'code' => config('app.dev_tools.default_otp_code'),
+                'expires_at' => $otp->expires_at->toISOString(),
+            ];
+        }
+
         $otp = Otp::generateFor($email, $purpose);
 
         // Send email with OTP
@@ -38,6 +51,13 @@ class OtpService
      */
     public function verifyOtp(string $email, string $code, string $purpose = 'request'): array
     {
+        if ($this->isOtpBypassEnabled()) {
+            return [
+                'success' => true,
+                'message' => '[DEV] OTP bypass enabled. Verification skipped.',
+            ];
+        }
+
         $isValid = Otp::verify($email, $code, $purpose);
 
         if ($isValid) {
@@ -63,6 +83,11 @@ class OtpService
             ->where('used', true)
             ->where('updated_at', '>', now()->subMinutes(30))
             ->exists();
+    }
+
+    private function isOtpBypassEnabled(): bool
+    {
+        return (bool) (config('app.dev_tools.enabled') && config('app.dev_tools.bypass_otp'));
     }
 }
 

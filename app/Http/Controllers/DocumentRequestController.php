@@ -77,11 +77,27 @@ class DocumentRequestController extends Controller
      */
     public function verifyOtp(Request $request)
     {
-        $request->validate([
+        $rules = [
             'email' => 'required|email',
-            'otp' => 'required|string|size:6',
             'document_type_id' => 'required|exists:document_types,id',
-        ]);
+        ];
+
+        if (!$this->isOtpBypassEnabled()) {
+            $rules['otp'] = 'required|string|size:6';
+        }
+
+        $request->validate($rules);
+
+        if ($this->isOtpBypassEnabled()) {
+            session([
+                'verified_email' => $request->email,
+                'verified_at' => now()->toISOString(),
+                'document_type_id' => $request->document_type_id,
+            ]);
+
+            return redirect()->route('request.form')
+                ->with('success', '[DEV] OTP bypass enabled. Email auto-verified.');
+        }
 
         $result = $this->otpService->verifyOtp($request->email, $request->otp, 'request');
 
@@ -262,6 +278,11 @@ class DocumentRequestController extends Controller
             'Grade 11' => 'Grade 11',
             'Grade 12' => 'Grade 12',
         ];
+    }
+
+    private function isOtpBypassEnabled(): bool
+    {
+        return (bool) (config('app.dev_tools.enabled') && config('app.dev_tools.bypass_otp'));
     }
 
     /**
