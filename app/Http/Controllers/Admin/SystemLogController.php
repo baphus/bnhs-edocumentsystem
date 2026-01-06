@@ -15,10 +15,12 @@ use Inertia\Response;
 class SystemLogController extends Controller
 {
     /**
-     * Display unified system logs.
+     * Display unified activity timeline logs.
      */
     public function index(Request $request): Response
     {
+        $source = $request->input('source', 'Request');
+
         // 1. Request Logs Query
         $requestQuery = DB::table('request_logs')
             ->leftJoin('users', 'request_logs.user_id', '=', 'users.id')
@@ -74,8 +76,12 @@ class SystemLogController extends Controller
 
         // Filter by source
         $queries = [];
-        if (!$request->source || $request->source === 'Request') $queries[] = $requestQuery;
-        if (!$request->source || $request->source === 'Email') $queries[] = $emailQuery;
+        if (!$source || $source === 'Request') {
+            $queries[] = $requestQuery;
+        }
+        if (!$source || $source === 'Email') {
+            $queries[] = $emailQuery;
+        }
         
         if (count($queries) > 0) {
             $finalQuery = array_shift($queries);
@@ -99,7 +105,12 @@ class SystemLogController extends Controller
 
         return Inertia::render('Admin/Logs/Index', [
             'logs' => $logs,
-            'filters' => $request->only(['search', 'date_from', 'date_to', 'source']),
+            'filters' => [
+                'search' => $request->search,
+                'date_from' => $request->date_from,
+                'date_to' => $request->date_to,
+                'source' => $source,
+            ],
             'users' => $users,
         ]);
     }

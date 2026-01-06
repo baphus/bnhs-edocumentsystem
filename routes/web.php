@@ -169,7 +169,7 @@ Route::middleware(["auth", "role:admin"])->prefix("admin")->name("admin.")->grou
     // Audit Logs (New)
     Route::get("/audit-logs", [\App\Http\Controllers\Admin\AuditLogController::class, "index"])->name("audit-logs.index");
     
-    // System Logs
+    // Activity Timeline
     Route::get("/logs", [SystemLogController::class, "index"])->name("logs.index");
     
     // Settings

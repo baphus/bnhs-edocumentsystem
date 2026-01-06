@@ -184,7 +184,7 @@ onUnmounted(() => {
                             Audit Logs
                         </SidebarLink>
 
-                        <!-- System Logs (Admin only) -->
+                        <!-- Activity Timeline (Admin only) -->
                         <SidebarLink
                             v-if="isAdmin"
                             :href="route('admin.logs.index')"
@@ -192,7 +192,7 @@ onUnmounted(() => {
                             :collapsed="sidebarCollapsed"
                             icon="logs"
                         >
-                            System Logs
+                            Activity Timeline
                         </SidebarLink>
 
                         <!-- Settings (Admin only) -->

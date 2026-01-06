@@ -30,8 +30,9 @@ interface Props {
     };
     filters: {
         search?: string;
-        from_date?: string;
-        to_date?: string;
+        date_from?: string;
+        date_to?: string;
+        source?: string;
     };
 }
 
@@ -39,8 +40,9 @@ const props = defineProps<Props>();
 
 const filters = ref({
     search: props.filters.search || '',
-    from_date: props.filters.from_date || '',
-    to_date: props.filters.to_date || '',
+    date_from: props.filters.date_from || '',
+    date_to: props.filters.date_to || '',
+    source: props.filters.source || 'Request',
 });
 
 watch(filters, debounce((newFilters) => {
@@ -73,11 +75,11 @@ const getActionColor = (action: string) => {
 
 
 <template>
-    <Head title="System Logs" />
+    <Head title="Activity Timeline" />
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">System Logs</h2>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">Activity Timeline</h2>
         </template>
 
         <div class="py-12">
@@ -89,9 +91,29 @@ const getActionColor = (action: string) => {
                             Activity Timeline
                         </h2>
                         <p class="mt-1 text-sm text-gray-500">
-                            Comprehensive history of system activities including requests, emails, and audits.
+                            Comprehensive history of request and email activity.
                         </p>
                     </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="mb-4 flex gap-3 border-b border-gray-200 pb-2">
+                    <button
+                        type="button"
+                        class="rounded-md px-4 py-2 text-sm font-semibold"
+                        :class="filters.source === 'Request' ? 'bg-bnhs-blue text-white shadow' : 'text-gray-600 hover:bg-gray-100'"
+                        @click="filters.source = 'Request'"
+                    >
+                        Request Logs
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-md px-4 py-2 text-sm font-semibold"
+                        :class="filters.source === 'Email' ? 'bg-bnhs-blue text-white shadow' : 'text-gray-600 hover:bg-gray-100'"
+                        @click="filters.source = 'Email'"
+                    >
+                        Email Logs
+                    </button>
                 </div>
 
                 <!-- Filters -->
@@ -111,26 +133,26 @@ const getActionColor = (action: string) => {
 
                         <!-- Date Filters -->
                         <div>
-                            <label for="from_date" class="block text-sm font-medium text-gray-700">From Date</label>
+                            <label for="date_from" class="block text-sm font-medium text-gray-700">From Date</label>
                             <TextInput
-                                id="from_date"
-                                v-model="filters.from_date"
+                                id="date_from"
+                                v-model="filters.date_from"
                                 type="date"
                                 class="mt-1 block w-full"
                             />
                         </div>
                         <div>
-                            <label for="to_date" class="block text-sm font-medium text-gray-700">To Date</label>
+                            <label for="date_to" class="block text-sm font-medium text-gray-700">To Date</label>
                             <TextInput
-                                id="to_date"
-                                v-model="filters.to_date"
+                                id="date_to"
+                                v-model="filters.date_to"
                                 type="date"
                                 class="mt-1 block w-full"
                             />
                         </div>
                     </div>
                     <div class="mt-4 flex justify-end">
-                        <SecondaryButton @click="filters = { search: '', from_date: '', to_date: '' }" class="text-xs">
+                        <SecondaryButton @click="filters = { search: '', date_from: '', date_to: '', source: filters.source }" class="text-xs">
                             Clear Filters
                         </SecondaryButton>
                     </div>

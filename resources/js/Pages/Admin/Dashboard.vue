@@ -192,8 +192,8 @@ const formatDate = (date: string) => {
                             </svg>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900">System Logs</h3>
-                            <p class="text-sm text-gray-500">Audit trail & email logs</p>
+                            <h3 class="font-semibold text-gray-900">Activity Timeline</h3>
+                            <p class="text-sm text-gray-500">Request and email history</p>
                         </div>
                     </Link>
 

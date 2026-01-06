@@ -18,7 +18,7 @@ The system has been unified with clear role-based access control. All users acce
   - ✅ User management
   - ✅ Document type management
   - ✅ System settings
-  - ✅ View system logs
+   - ✅ View activity timeline
   - ✅ Trash management (restore/force delete)
   - ✅ Export data
 
@@ -77,7 +77,7 @@ The system has been unified with clear role-based access control. All users acce
 /admin/superadmin/users                         - User management
 /admin/superadmin/document-types                - Document type CRUD
 /admin/superadmin/settings                      - System settings
-/admin/superadmin/logs                          - System logs
+/admin/superadmin/logs                          - Activity timeline
 /admin/superadmin/trash/requests                - Trash management
 ```
 
