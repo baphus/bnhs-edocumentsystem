@@ -38,8 +38,8 @@ class AuthenticatedSessionController extends Controller
             'last_login_at' => now(),
         ]);
 
-        // All users are admins now, redirect to admin dashboard
-        return redirect()->intended(route('admin.dashboard', absolute: false));
+        // Redirect to the role-based dashboard router
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
