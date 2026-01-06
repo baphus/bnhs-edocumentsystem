@@ -1,0 +1,20 @@
+config:
+  target: "http://bnhs.test"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Realistic load - 5 users/sec"
+  http:
+    timeout: 10
+
+scenarios:
+  - name: "Basic Pages"
+    flow:
+      - get:
+          url: "/"
+      - think: 2
+      - get:
+          url: "/login"
+      - think: 1
+      - get:
+          url: "/register"

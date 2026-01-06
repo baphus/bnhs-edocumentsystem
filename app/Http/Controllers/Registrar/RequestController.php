@@ -22,7 +22,12 @@ class RequestController extends Controller
      */
     public function index(Request $request): Response
     {
-        $query = DocumentRequest::with("documentType");
+        // Only select needed columns
+        $query = DocumentRequest::select([
+            'id', 'tracking_id', 'first_name', 'middle_name', 'last_name', 'email',
+            'lrn', 'grade_level', 'document_type_id', 'signature', 'status',
+            'created_at', 'updated_at'
+        ])->with('documentType:id,name,category');
 
         // Search
         if ($request->search) {
@@ -90,7 +95,10 @@ class RequestController extends Controller
                 "updated_at" => $req->updated_at,
             ]);
 
-        $documentTypes = DocumentType::all();
+        // Cache document types
+        $documentTypes = \Illuminate\Support\Facades\Cache::remember('document_types_all', 3600, function() {
+            return DocumentType::select('id', 'name', 'category')->orderBy('name')->get();
+        });
         
         $statuses = ["Pending", "Verified", "Processing", "Ready", "Completed", "Rejected"];
 

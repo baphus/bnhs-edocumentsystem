@@ -1,0 +1,18 @@
+config:
+  target: "http://bnhs.test" # Change to your actual URL (bnhs.test for Herd, or 127.0.0.1:8000 for artisan serve)
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Quick load test"
+  http:
+    timeout: 10
+
+scenarios:
+  - name: "Basic Homepage Test"
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/login"
+      - get:
+          url: "/register"

@@ -1,0 +1,32 @@
+config:
+  target: "http://localhost" # Change to your actual URL
+  phases:
+    - duration: 60
+      arrivalRate: 50
+      name: "Moderate load"
+    - duration: 120
+      arrivalRate: 100
+      name: "High load"
+    - duration: 60
+      arrivalRate: 200
+      name: "Stress test - breaking point"
+    - duration: 30
+      arrivalRate: 50
+      name: "Recovery"
+  http:
+    timeout: 30
+  ensure:
+    maxErrorRate: 5 # Fail if error rate exceeds 5%
+    p99: 2000 # 99th percentile response time should be under 2000ms
+
+scenarios:
+  - name: "Mixed Load Pattern"
+    flow:
+      - get:
+          url: "/"
+      - think: 1
+      - get:
+          url: "/dashboard"
+      - think: 2
+      - get:
+          url: "/requests"

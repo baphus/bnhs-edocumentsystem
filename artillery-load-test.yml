@@ -1,0 +1,68 @@
+config:
+  target: "http://localhost" # Change to your actual URL
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up phase"
+    - duration: 60
+      arrivalRate: 20
+      name: "Ramp up load"
+    - duration: 120
+      arrivalRate: 50
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool down"
+  http:
+    timeout: 30
+  processor: "./artillery-processor.js"
+  variables:
+    loginEmail: "test@example.com"
+    loginPassword: "password"
+
+scenarios:
+  - name: "Homepage Load"
+    weight: 30
+    flow:
+      - get:
+          url: "/"
+          capture:
+            - json: "$.csrf_token"
+              as: "csrfToken"
+
+  - name: "Login Flow"
+    weight: 20
+    flow:
+      - get:
+          url: "/login"
+      - post:
+          url: "/login"
+          json:
+            email: "{{ loginEmail }}"
+            password: "{{ loginPassword }}"
+            remember: false
+          headers:
+            X-Requested-With: "XMLHttpRequest"
+
+  - name: "Dashboard Access"
+    weight: 25
+    flow:
+      - get:
+          url: "/dashboard"
+      - think: 3
+
+  - name: "Document Request Flow"
+    weight: 15
+    flow:
+      - get:
+          url: "/requests"
+      - think: 2
+      - get:
+          url: "/requests/create"
+
+  - name: "API Endpoints"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/document-types"
+      - think: 1

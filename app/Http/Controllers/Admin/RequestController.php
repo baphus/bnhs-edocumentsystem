@@ -23,7 +23,12 @@ class RequestController extends Controller
      */
     public function index(Request $request): Response
     {
-        $query = DocumentRequest::with("documentType");
+        // Only select needed columns for better performance
+        $query = DocumentRequest::select([
+            'id', 'tracking_id', 'first_name', 'middle_name', 'last_name', 'email',
+            'lrn', 'grade_level', 'document_type_id', 'status', 'otp_verified',
+            'created_at', 'updated_at'
+        ])->with('documentType:id,name');
 
         // Search
         if ($request->has("search") && $request->search) {
@@ -99,7 +104,11 @@ class RequestController extends Controller
                 "updated_at" => $req->updated_at,
             ]);
 
-        $documentTypes = DocumentType::all();
+        // Cache document types for 1 hour
+        $documentTypes = \Illuminate\Support\Facades\Cache::remember('document_types_all', 3600, function() {
+            return DocumentType::select('id', 'name', 'category')->orderBy('name')->get();
+        });
+        
         $statuses = ["Pending", "Verified", "Processing", "Ready", "Completed", "Rejected"];
 
         return Inertia::render("Admin/Requests/Index", [

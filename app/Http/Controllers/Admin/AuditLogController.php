@@ -43,15 +43,20 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        // Global Search (User name, Description, User ID)
+        // Global Search (User name, Description, User ID) - Optimized with JOIN
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                  ->orWhere('id', $search)
-                  ->orWhereHas('user', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                $q->where('audit_logs.description', 'like', "%{$search}%")
+                  ->orWhere('audit_logs.id', $search)
+                  ->orWhereExists(function ($query) use ($search) {
+                      $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                            ->from('users')
+                            ->whereColumn('users.id', 'audit_logs.user_id')
+                            ->where(function ($q) use ($search) {
+                                $q->where('users.name', 'like', "%{$search}%")
+                                  ->orWhere('users.email', 'like', "%{$search}%");
+                            });
                   });
             });
         }
@@ -62,8 +67,10 @@ class AuditLogController extends Controller
         return Inertia::render('Admin/AuditLogs/Index', [
             'logs' => $logs,
             'filters' => $request->only(['action', 'role', 'model_type', 'start_date', 'end_date', 'search']),
-            // Provide unique options for dropdowns if needed, or hardcode in frontend
-            'actions' => AuditLog::select('action')->distinct()->pluck('action'),
+            // Cache distinct actions for better performance
+            'actions' => \Illuminate\Support\Facades\Cache::remember('audit_log_actions', 3600, function() {
+                return AuditLog::select('action')->distinct()->orderBy('action')->pluck('action');
+            }),
         ]);
     }
 
@@ -99,16 +106,22 @@ class AuditLogController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                  ->orWhere('id', $search)
-                  ->orWhereHas('user', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                $q->where('audit_logs.description', 'like', "%{$search}%")
+                  ->orWhere('audit_logs.id', $search)
+                  ->orWhereExists(function ($query) use ($search) {
+                      $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                            ->from('users')
+                            ->whereColumn('users.id', 'audit_logs.user_id')
+                            ->where(function ($q) use ($search) {
+                                $q->where('users.name', 'like', "%{$search}%")
+                                  ->orWhere('users.email', 'like', "%{$search}%");
+                            });
                   });
             });
         }
 
-        $logs = $query->get();
+        // Limit export to prevent memory issues
+        $logs = $query->limit(10000)->get();
 
         // Generate CSV
         $filename = 'audit_logs_' . date('Y-m-d_His') . '.csv';
