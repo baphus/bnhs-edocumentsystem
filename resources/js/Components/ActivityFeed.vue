@@ -67,7 +67,7 @@ const getActionColor = (action: string) => {
                     </div>
                     <div class="flex-1">
                         <p class="text-sm text-gray-900">
-                            <span class="font-medium">{{ activity.user_name }}</span>
+                            <span class="font-medium">{{ activity.user_name + ' '}}</span>
                             <span v-if="activity.action === 'status_change'">
                                 changed request
                                 <span v-if="activity.tracking_id" class="font-mono text-bnhs-blue">
