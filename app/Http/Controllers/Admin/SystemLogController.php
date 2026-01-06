@@ -3,103 +3,126 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\EmailLog;
 use App\Models\RequestLog;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class SystemLogController extends Controller
 {
     /**
-     * Display system logs (request logs and email logs).
+     * Display unified system logs.
      */
     public function index(Request $request): Response
     {
-        // Request Logs
-        $requestLogsQuery = RequestLog::with(['user', 'documentRequest'])
-            ->whereNotNull('document_request_id');
-
-        if ($request->has('action') && $request->action) {
-            $requestLogsQuery->where('action', $request->action);
-        }
-
-        if ($request->has('user_id') && $request->user_id) {
-            $requestLogsQuery->where('user_id', $request->user_id);
-        }
-
-        if ($request->has('from_date') && $request->from_date) {
-            $requestLogsQuery->whereDate('created_at', '>=', $request->from_date);
-        }
-
-        if ($request->has('to_date') && $request->to_date) {
-            $requestLogsQuery->whereDate('created_at', '<=', $request->to_date);
-        }
-
-        $requestLogs = $requestLogsQuery->latest()
-            ->paginate(20, ['*'], 'request_logs_page')
-            ->withQueryString()
-            ->through(fn($log) => [
-                'id' => $log->id,
-                'action' => $log->action,
-                'user_name' => $log->user?->name ?? 'System',
-                'tracking_id' => $log->documentRequest?->tracking_id,
-                'old_value' => $log->old_value,
-                'new_value' => $log->new_value,
-                'description' => $log->description,
-                'created_at' => $log->created_at,
+        // 1. Audit Logs Query
+        $auditQuery = DB::table('audit_logs')
+            ->leftJoin('users', 'audit_logs.user_id', '=', 'users.id')
+            ->select([
+                'audit_logs.id',
+                'audit_logs.created_at',
+                DB::raw("'Audit' as source"),
+                'users.name as causer',
+                'audit_logs.action',
+                'audit_logs.model_type as module',
+                'audit_logs.description',
+                'audit_logs.new_values as details',
+                DB::raw("NULL as subject"),
             ]);
 
-        // Email Logs
-        $emailLogsQuery = EmailLog::with('documentRequest');
-
-        if ($request->has('email_status') && $request->email_status) {
-            $emailLogsQuery->where('status', $request->email_status);
-        }
-
-        if ($request->has('email_from_date') && $request->email_from_date) {
-            $emailLogsQuery->whereDate('created_at', '>=', $request->email_from_date);
-        }
-
-        if ($request->has('email_to_date') && $request->email_to_date) {
-            $emailLogsQuery->whereDate('created_at', '<=', $request->email_to_date);
-        }
-
-        $emailLogs = $emailLogsQuery->latest()
-            ->paginate(20, ['*'], 'email_logs_page')
-            ->withQueryString()
-            ->through(fn($log) => [
-                'id' => $log->id,
-                'recipient_email' => $log->recipient_email,
-                'subject' => $log->subject,
-                'status' => $log->status,
-                'error_message' => $log->error_message,
-                'tracking_id' => $log->documentRequest?->tracking_id,
-                'sent_at' => $log->sent_at,
-                'delivered_at' => $log->delivered_at,
-                'created_at' => $log->created_at,
+        // 2. Request Logs Query
+        $requestQuery = DB::table('request_logs')
+            ->leftJoin('users', 'request_logs.user_id', '=', 'users.id')
+            ->leftJoin('document_requests', 'request_logs.document_request_id', '=', 'document_requests.id')
+            ->select([
+                'request_logs.id',
+                'request_logs.created_at',
+                DB::raw("'Request' as source"),
+                'users.name as causer',
+                'request_logs.action',
+                DB::raw("'Document Request' as module"),
+                'request_logs.description',
+                DB::raw("NULL as details"), // Use description or separate fetch if needed
+                'document_requests.tracking_id as subject',
+            ]);
+            
+        // 3. Email Logs Query
+        $emailQuery = DB::table('email_logs')
+            ->select([
+                'email_logs.id',
+                'email_logs.created_at',
+                DB::raw("'Email' as source"),
+                'email_logs.recipient_email as causer',
+                'email_logs.status as action',
+                'email_logs.error_message as module', // Reusing module col for error/extra info
+                'email_logs.error_message as description',
+                DB::raw("NULL as details"),
+                'email_logs.subject as subject',
             ]);
 
-        // Get unique actions for filter
-        $actions = RequestLog::whereNotNull('document_request_id')->distinct()->pluck('action');
+        // Apply filters
+        if ($request->search) {
+            $term = '%'.$request->search.'%';
+            $auditQuery->where(function($q) use ($term) {
+                $q->where('audit_logs.description', 'like', $term)
+                  ->orWhere('users.name', 'like', $term);
+            });
+            $requestQuery->where(function($q) use ($term) {
+                $q->where('request_logs.description', 'like', $term)
+                  ->orWhere('users.name', 'like', $term);
+            });
+            $emailQuery->where(function($q) use ($term) {
+                $q->where('email_logs.subject', 'like', $term)
+                  ->orWhere('email_logs.recipient_email', 'like', $term);
+            });
+        }
+        
+        if ($request->date_from) {
+            $auditQuery->whereDate('audit_logs.created_at', '>=', $request->date_from);
+            $requestQuery->whereDate('request_logs.created_at', '>=', $request->date_from);
+            $emailQuery->whereDate('email_logs.created_at', '>=', $request->date_from);
+        }
+        
+        if ($request->date_to) {
+            $auditQuery->whereDate('audit_logs.created_at', '<=', $request->date_to);
+            $requestQuery->whereDate('request_logs.created_at', '<=', $request->date_to);
+            $emailQuery->whereDate('email_logs.created_at', '<=', $request->date_to);
+        }
 
-        // Get users for filter dropdown
-        $users = User::select('id', 'name', 'email')
-            ->orderBy('name')
-            ->get()
-            ->map(fn($user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ]);
+        // Filter by source
+        $queries = [];
+        if (!$request->source || $request->source === 'Audit') $queries[] = $auditQuery;
+        if (!$request->source || $request->source === 'Request') $queries[] = $requestQuery;
+        if (!$request->source || $request->source === 'Email') $queries[] = $emailQuery;
+        
+        if (count($queries) > 0) {
+            $finalQuery = array_shift($queries);
+            foreach ($queries as $q) {
+                $finalQuery->unionAll($q);
+            }
+            
+            // Wrap in a subquery to avoid "ambiguous column name" errors when ordering
+            $logs = DB::query()
+                ->fromSub($finalQuery, 'unified_logs')
+                ->orderBy('created_at', 'desc')
+                ->paginate(20)
+                ->withQueryString();
+        } else {
+            // Fallback empty paginator
+            $logs = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+        }
+
+        // Get users for filter
+        $users = User::select('id', 'name', 'email')->orderBy('name')->get();
 
         return Inertia::render('Admin/Logs/Index', [
-            'requestLogs' => $requestLogs,
-            'emailLogs' => $emailLogs,
-            'actions' => $actions,
+            'logs' => $logs,
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'source']),
             'users' => $users,
-            'filters' => $request->only(['action', 'user_id', 'from_date', 'to_date', 'email_status', 'email_from_date', 'email_to_date']),
         ]);
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Listeners\LogSentEmail;
+use App\Models\User;
+use App\Observers\UserObserver;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Vite;
@@ -28,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
         // Register email logging listeners
         Event::listen(MessageSent::class, LogSentEmail::class);
 
-        // Register Audit Log Subscriber
-        Event::subscribe(\App\Listeners\UserActivitySubscriber::class);
+        // Register observers
+        User::observe(UserObserver::class);
     }
 }

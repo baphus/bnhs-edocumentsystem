@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AuditLog extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'user_role',
@@ -25,15 +28,8 @@ class AuditLog extends Model
         'new_values' => 'array',
     ];
 
-    // Relationship to the user who performed the action
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    // Dynamic relationship to the subject model
-    public function subject()
-    {
-        return $this->morphTo('model');
     }
 }
