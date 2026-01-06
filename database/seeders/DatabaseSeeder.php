@@ -21,8 +21,6 @@ class DatabaseSeeder extends Seeder
             
             // Sample data seeders
             DocumentRequestSeeder::class,
-            RequestLogSeeder::class,
-            EmailLogSeeder::class,
         ]);
 
         $this->command->info('All seeders completed successfully!');
