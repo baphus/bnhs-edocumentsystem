@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
+import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, ArrowDownTrayIcon, TrashIcon } from '@heroicons/vue/20/solid';
 
 // Props definition
 const props = defineProps<{
@@ -35,6 +35,10 @@ const startDate = ref(props.filters.start_date || '');
 const endDate = ref(props.filters.end_date || '');
 
 const expandedRows = ref<Set<number>>(new Set());
+const showClearModal = ref(false);
+const clearType = ref<'all' | 'range'>('range');
+const clearStartDate = ref('');
+const clearEndDate = ref('');
 
 // Debounce helper
 const debounce = (fn: Function, delay: number) => {
@@ -127,6 +131,58 @@ const formatValue = (val: any) => {
     if (typeof val === 'object') return JSON.stringify(val);
     return val;
 };
+
+// Export functionality
+const exportLogs = () => {
+    const queryParams: any = {};
+    
+    if (search.value) queryParams.search = search.value;
+    if (filterAction.value) queryParams.action = filterAction.value;
+    if (filterRole.value) queryParams.role = filterRole.value;
+    if (filterModel.value) queryParams.model_type = filterModel.value;
+    if (startDate.value) queryParams.start_date = startDate.value;
+    if (endDate.value) queryParams.end_date = endDate.value;
+    
+    const params = new URLSearchParams(queryParams);
+    const url = route('admin.audit-logs.export');
+    window.location.href = params.toString() ? `${url}?${params.toString()}` : url;
+};
+
+// Clear functionality
+const openClearModal = () => {
+    showClearModal.value = true;
+    clearStartDate.value = startDate.value || '';
+    clearEndDate.value = endDate.value || '';
+};
+
+const closeClearModal = () => {
+    showClearModal.value = false;
+    clearType.value = 'range';
+};
+
+const confirmClear = () => {
+    if (clearType.value === 'range' && (!clearStartDate.value || !clearEndDate.value)) {
+        alert('Please select both start and end dates for range clear.');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to clear ${clearType.value === 'all' ? 'ALL' : 'selected range of'} audit logs? This action cannot be undone.`)) {
+        return;
+    }
+
+    router.delete(route('admin.audit-logs.clear'), {
+        data: {
+            clear_type: clearType.value,
+            start_date: clearStartDate.value,
+            end_date: clearEndDate.value,
+        },
+        onSuccess: () => {
+            closeClearModal();
+        },
+        preserveScroll: true,
+    });
+};
+
 </script>
 
 <template>
@@ -142,6 +198,24 @@ const formatValue = (val: any) => {
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end gap-3 mb-6">
+                            <button
+                                @click="exportLogs"
+                                class="flex items-center gap-2 rounded-lg bg-bnhs-blue px-4 py-2 text-sm font-medium text-white hover:bg-bnhs-blue-600"
+                            >
+                                <ArrowDownTrayIcon class="h-4 w-4" />
+                                Export CSV
+                            </button>
+                            <button
+                                @click="openClearModal"
+                                class="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                            >
+                                <TrashIcon class="h-4 w-4" />
+                                Clear Logs
+                            </button>
+                        </div>
+
                         <!-- Filters -->
                         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
                             <!-- Search -->
@@ -338,6 +412,99 @@ const formatValue = (val: any) => {
                             No logs found matching your criteria.
                         </div>
 
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clear Logs Modal -->
+        <div v-if="showClearModal" class="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="closeClearModal"></div>
+
+                <!-- Center modal -->
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                    <div>
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                            <TrashIcon class="h-6 w-6 text-red-600" aria-hidden="true" />
+                        </div>
+                        <div class="mt-3 text-center sm:mt-5">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Clear Audit Logs
+                            </h3>
+                            <div class="mt-4">
+                                <div class="space-y-4">
+                                    <!-- Clear Type Selection -->
+                                    <div class="text-left">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Clear Type</label>
+                                        <div class="space-y-2">
+                                            <label class="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    v-model="clearType"
+                                                    value="range"
+                                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                                                />
+                                                <span class="ml-2 text-sm text-gray-700">Clear by date range</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    v-model="clearType"
+                                                    value="all"
+                                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                                                />
+                                                <span class="ml-2 text-sm text-gray-700">Clear all logs</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Date Range (only shown when range is selected) -->
+                                    <div v-if="clearType === 'range'" class="space-y-3 text-left">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Start Date</label>
+                                            <input
+                                                v-model="clearStartDate"
+                                                type="date"
+                                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">End Date</label>
+                                            <input
+                                                v-model="clearEndDate"
+                                                type="date"
+                                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="text-sm text-red-600">
+                                        <strong>Warning:</strong> This action cannot be undone.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                        <button
+                            type="button"
+                            @click="confirmClear"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
+                        >
+                            Clear Logs
+                        </button>
+                        <button
+                            type="button"
+                            @click="closeClearModal"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                        >
+                            Cancel
+                        </button>
                     </div>
                 </div>
             </div>

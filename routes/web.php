@@ -168,6 +168,8 @@ Route::middleware(["auth", "role:admin"])->prefix("admin")->name("admin.")->grou
 
     // Audit Logs (New)
     Route::get("/audit-logs", [\App\Http\Controllers\Admin\AuditLogController::class, "index"])->name("audit-logs.index");
+    Route::get("/audit-logs/export", [\App\Http\Controllers\Admin\AuditLogController::class, "export"])->name("audit-logs.export");
+    Route::delete("/audit-logs/clear", [\App\Http\Controllers\Admin\AuditLogController::class, "clear"])->name("audit-logs.clear");
     
     // Activity Timeline
     Route::get("/logs", [SystemLogController::class, "index"])->name("logs.index");
