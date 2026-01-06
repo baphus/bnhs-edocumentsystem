@@ -196,16 +196,16 @@ const getActionColor = (action: string) => {
                         <div class="flex items-center justify-between">
                             <div class="flex flex-1 justify-between sm:hidden">
                                 <InertiaLink 
-                                    v-if="logs.prev_page_url" 
-                                    :href="logs.prev_page_url" 
+                                    v-if="logs.meta?.links[0]?.url && !logs.meta.links[0].active" 
+                                    :href="logs.meta.links[0].url" 
                                     class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                     Previous
                                 </InertiaLink>
                                 <div v-else></div>
                                 <InertiaLink 
-                                    v-if="logs.next_page_url" 
-                                    :href="logs.next_page_url" 
+                                    v-if="logs.meta?.links[logs.meta.links.length - 1]?.url && !logs.meta.links[logs.meta.links.length - 1].active" 
+                                    :href="logs.meta.links[logs.meta.links.length - 1].url" 
                                     class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                     Next
@@ -215,11 +215,11 @@ const getActionColor = (action: string) => {
                                 <div>
                                     <p class="text-sm text-gray-700">
                                         Showing
-                                        <span class="font-medium">{{ logs.from || 0 }}</span>
+                                        <span class="font-medium">{{ logs.meta?.from || 0 }}</span>
                                         to
-                                        <span class="font-medium">{{ logs.to || 0 }}</span>
+                                        <span class="font-medium">{{ logs.meta?.to || 0 }}</span>
                                         of
-                                        <span class="font-medium">{{ logs.total || 0 }}</span>
+                                        <span class="font-medium">{{ logs.meta?.total || 0 }}</span>
                                         results
                                     </p>
                                 </div>

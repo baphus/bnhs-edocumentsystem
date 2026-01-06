@@ -46,6 +46,7 @@ const columnVisibility = ref({
     lrn: true,
     email: false,
     document: true,
+    signature: false,
     status: true,
     otp_verified: props.isSuperadmin,
     date: true,
@@ -239,6 +240,10 @@ defineExpose({
                                         <label class="flex items-center">
                                             <input type="checkbox" v-model="columnVisibility.document" class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue" />
                                             <span class="ml-2 text-sm text-gray-700">Document Type</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" v-model="columnVisibility.signature" class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue" />
+                                            <span class="ml-2 text-sm text-gray-700">Signature</span>
                                         </label>
                                         <label class="flex items-center">
                                             <input type="checkbox" v-model="columnVisibility.status" class="rounded border-gray-300 text-bnhs-blue focus:ring-bnhs-blue" />
@@ -441,6 +446,9 @@ defineExpose({
                                         </svg>
                                     </span>
                                 </div>
+                            </th>
+                            <th v-if="columnVisibility.signature" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                Signature
                             </th>
                             <th v-if="columnVisibility.status"
                                 @click="sortColumn('status')"

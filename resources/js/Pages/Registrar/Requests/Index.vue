@@ -371,6 +371,15 @@ const saveEdit = (requestId: number) => {
                             <td v-if="columnVisibility.document" class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                                 {{ request.document_type?.name }}
                             </td>
+                            <td v-if="columnVisibility.signature" class="whitespace-nowrap px-6 py-4">
+                                <img
+                                    v-if="request.signature"
+                                    :src="request.signature"
+                                    :alt="`${request.first_name}'s signature`"
+                                    class="h-10 max-w-xs rounded border border-gray-200 object-contain"
+                                />
+                                <span v-else class="text-gray-400 text-sm">No signature</span>
+                            </td>
                             <td v-if="columnVisibility.status" class="whitespace-nowrap px-6 py-4">
                                 <span v-if="!isSuperadmin || editingRequest !== request.id" :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]">
                                     {{ request.status }}

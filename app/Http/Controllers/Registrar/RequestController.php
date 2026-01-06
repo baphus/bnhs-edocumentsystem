@@ -84,6 +84,7 @@ class RequestController extends Controller
                 "grade_level" => $req->grade_level,
                 "document_type" => $req->documentType ? ["name" => $req->documentType->name] : null,
                 "document_category" => $req->documentType->category ?? null,
+                "signature" => $req->signature,
                 "status" => $req->status,
                 "created_at" => $req->created_at,
                 "updated_at" => $req->updated_at,
