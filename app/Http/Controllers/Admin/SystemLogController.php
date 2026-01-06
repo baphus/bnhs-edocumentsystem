@@ -19,22 +19,7 @@ class SystemLogController extends Controller
      */
     public function index(Request $request): Response
     {
-        // 1. Audit Logs Query
-        $auditQuery = DB::table('audit_logs')
-            ->leftJoin('users', 'audit_logs.user_id', '=', 'users.id')
-            ->select([
-                'audit_logs.id',
-                'audit_logs.created_at',
-                DB::raw("'Audit' as source"),
-                'users.name as causer',
-                'audit_logs.action',
-                'audit_logs.model_type as module',
-                'audit_logs.description',
-                'audit_logs.new_values as details',
-                DB::raw("NULL as subject"),
-            ]);
-
-        // 2. Request Logs Query
+        // 1. Request Logs Query
         $requestQuery = DB::table('request_logs')
             ->leftJoin('users', 'request_logs.user_id', '=', 'users.id')
             ->leftJoin('document_requests', 'request_logs.document_request_id', '=', 'document_requests.id')
@@ -67,10 +52,6 @@ class SystemLogController extends Controller
         // Apply filters
         if ($request->search) {
             $term = '%'.$request->search.'%';
-            $auditQuery->where(function($q) use ($term) {
-                $q->where('audit_logs.description', 'like', $term)
-                  ->orWhere('users.name', 'like', $term);
-            });
             $requestQuery->where(function($q) use ($term) {
                 $q->where('request_logs.description', 'like', $term)
                   ->orWhere('users.name', 'like', $term);
@@ -82,20 +63,17 @@ class SystemLogController extends Controller
         }
         
         if ($request->date_from) {
-            $auditQuery->whereDate('audit_logs.created_at', '>=', $request->date_from);
             $requestQuery->whereDate('request_logs.created_at', '>=', $request->date_from);
             $emailQuery->whereDate('email_logs.created_at', '>=', $request->date_from);
         }
         
         if ($request->date_to) {
-            $auditQuery->whereDate('audit_logs.created_at', '<=', $request->date_to);
             $requestQuery->whereDate('request_logs.created_at', '<=', $request->date_to);
             $emailQuery->whereDate('email_logs.created_at', '<=', $request->date_to);
         }
 
         // Filter by source
         $queries = [];
-        if (!$request->source || $request->source === 'Audit') $queries[] = $auditQuery;
         if (!$request->source || $request->source === 'Request') $queries[] = $requestQuery;
         if (!$request->source || $request->source === 'Email') $queries[] = $emailQuery;
         

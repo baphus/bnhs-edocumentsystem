@@ -32,7 +32,6 @@ interface Props {
         search?: string;
         from_date?: string;
         to_date?: string;
-        source?: string;
     };
 }
 
@@ -42,7 +41,6 @@ const filters = ref({
     search: props.filters.search || '',
     from_date: props.filters.from_date || '',
     to_date: props.filters.to_date || '',
-    source: props.filters.source || '',
 });
 
 watch(filters, debounce((newFilters) => {
@@ -60,15 +58,6 @@ const formatDate = (date: string) => {
         hour: '2-digit',
         minute: '2-digit',
     });
-};
-
-const getSourceColor = (source: string) => {
-    const colors: Record<string, string> = {
-        'Audit': 'bg-purple-100 text-purple-700',
-        'Request': 'bg-blue-100 text-blue-700',
-        'Email': 'bg-amber-100 text-amber-700',
-    };
-    return colors[source] || 'bg-gray-100 text-gray-700';
 };
 
 const getActionColor = (action: string) => {
@@ -120,21 +109,6 @@ const getActionColor = (action: string) => {
                             />
                         </div>
 
-                        <!-- Source Filter -->
-                        <div>
-                            <label for="source" class="block text-sm font-medium text-gray-700">Source</label>
-                            <select
-                                id="source"
-                                v-model="filters.source"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue sm:text-sm"
-                            >
-                                <option value="">All Sources</option>
-                                <option value="Audit">Audit Logs</option>
-                                <option value="Request">Request Logs</option>
-                                <option value="Email">Email Logs</option>
-                            </select>
-                        </div>
-
                         <!-- Date Filters -->
                         <div>
                             <label for="from_date" class="block text-sm font-medium text-gray-700">From Date</label>
@@ -156,7 +130,7 @@ const getActionColor = (action: string) => {
                         </div>
                     </div>
                     <div class="mt-4 flex justify-end">
-                        <SecondaryButton @click="filters = { search: '', source: '', from_date: '', to_date: '' }" class="text-xs">
+                        <SecondaryButton @click="filters = { search: '', from_date: '', to_date: '' }" class="text-xs">
                             Clear Filters
                         </SecondaryButton>
                     </div>
@@ -170,9 +144,6 @@ const getActionColor = (action: string) => {
                                 <tr>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                         Timestamp
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                        Source
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                         Subject
@@ -189,14 +160,9 @@ const getActionColor = (action: string) => {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 bg-white">
-                                <tr v-for="log in logs.data" :key="`${log.source}-${log.id}`" class="hover:bg-gray-50">
+                                <tr v-for="log in logs.data" :key="`${log.id}`" class="hover:bg-gray-50">
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                         {{ formatDate(log.created_at) }}
-                                    </td>
-                                    <td class="whitespace-nowrap px-6 py-4">
-                                        <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', getSourceColor(log.source)]">
-                                            {{ log.source }}
-                                        </span>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" :title="log.subject">
                                         {{ log.subject || '-' }}
@@ -217,7 +183,7 @@ const getActionColor = (action: string) => {
                                     </td>
                                 </tr>
                                 <tr v-if="logs.data.length === 0">
-                                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                                         No activity logs found matching your criteria.
                                     </td>
                                 </tr>
