@@ -3,43 +3,47 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, onMounted } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
+interface ActivityLog {
+    id: number;
+    action: string;
+    description: string | null;
+    old_value: string | null;
+    new_value: string | null;
+    user_name: string;
+    created_at: string;
+}
+
+interface Request {
+    id: number;
+    tracking_id: string;
+    document_type: string;
+    document_category: string;
+    purpose: string;
+    quantity: number;
+    status: string;
+    status_description: string;
+    estimated_completion_date?: string;
+    completed_at?: string;
+    created_at: string;
+    updated_at: string;
+    admin_notes?: string;
+    activity_logs?: ActivityLog[];
+}
+
 const props = defineProps<{
     email: string;
     userName?: string;
-    latestRequest?: {
-        id: number;
-        tracking_id: string;
-        document_type: string;
-        document_category: string;
-        purpose: string;
-        quantity: number;
-        status: string;
-        status_description: string;
-        estimated_completion_date?: string;
-        completed_at?: string;
-        created_at: string;
-        updated_at: string;
-        admin_notes?: string;
-    };
-    requestHistory?: Array<{
-        id: number;
-        tracking_id: string;
-        document_type: string;
-        document_category: string;
-        purpose: string;
-        quantity: number;
-        status: string;
-        status_description: string;
-        estimated_completion_date?: string;
-        completed_at?: string;
-        created_at: string;
-        updated_at: string;
-        admin_notes?: string;
-    }>;
+    latestRequest?: Request;
+    requestHistory?: Request[];
     hasRequests: boolean;
 }>();
 
 const copied = ref(false);
+const expandedRequests = ref<Record<number, boolean>>({});
+
+const toggleRequestExpanded = (requestId: number) => {
+    expandedRequests.value[requestId] = !expandedRequests.value[requestId];
+};
 
 const copyToClipboard = async (trackingId: string) => {
     try {
@@ -109,6 +113,24 @@ const isStepActive = (stepIndex: number, currentStatus: string) => {
     return stepIndex === getCurrentStepIndex(currentStatus);
 };
 
+const formatActionName = (action: string) => {
+    const actionMap: Record<string, string> = {
+        'status_change': 'Status Updated',
+        'note_updated': 'Notes Updated',
+        'request_created': 'Request Created',
+        'request_submitted': 'Request Submitted',
+    };
+    return actionMap[action] || action
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+};
+
+const getActionIcon = (action: string) => {
+    if (action === 'status_change') return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
+    if (action === 'note_updated') return 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z';
+    return 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+};
 
 </script>
 
@@ -222,122 +244,135 @@ const isStepActive = (stepIndex: number, currentStatus: string) => {
             <!-- Main Content -->
             <main class="flex-1 lg:ml-0">
                 <div class="p-4 lg:p-8">
-                    <!-- Document Progress Section -->
+                    <!-- Latest Request Progress -->
                     <div v-if="hasRequests && latestRequest" class="mb-6">
-                        <div class="rounded-xl bg-white p-6 shadow-sm">
-                            <div class="mb-6">
-                                <h2 class="text-xl font-bold text-gray-900">Document Request Progress</h2>
-                                <p class="mt-1 text-gray-600">Track the status of your latest document request</p>
-                                <div class="mt-2 flex items-center gap-2">
-                                    <span class="text-sm font-medium text-gray-500">Tracking ID:</span>
-                                    <span class="font-mono text-sm font-semibold text-bnhs-blue">{{ latestRequest.tracking_id }}</span>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <div class="flex items-start justify-between mb-6">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <span>Latest Request</span>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 mb-1">{{ latestRequest.document_type }}</h2>
+                                    <div class="flex items-center gap-3 text-sm text-gray-600">
+                                        <span class="font-mono font-medium">{{ latestRequest.tracking_id }}</span>
+                                        <button
+                                            @click="copyToClipboard(latestRequest.tracking_id)"
+                                            :class="[
+                                                'p-1 rounded hover:bg-gray-100',
+                                                copied ? 'text-green-600' : 'text-gray-400'
+                                            ]"
+                                            title="Copy tracking ID"
+                                        >
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path v-if="!copied" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
+                                <span
+                                    :class="[
+                                        'px-3 py-1 text-sm font-medium rounded-full border',
+                                        getStatusBadgeClass(latestRequest.status)
+                                    ]"
+                                >
+                                    {{ latestRequest.status }}
+                                </span>
                             </div>
 
                             <!-- Progress Bar -->
                             <div class="mb-6">
-                                <div class="flex justify-between mb-2">
-                                    <span class="text-sm font-medium text-gray-700">Progress</span>
-                                    <span class="text-sm font-medium text-gray-700">{{ Math.round(getProgressPercentage(latestRequest.status)) }}%</span>
+                                <div class="flex justify-between mb-2 text-sm">
+                                    <span class="font-medium text-gray-700">Progress</span>
+                                    <span class="font-medium text-gray-900">{{ Math.round(getProgressPercentage(latestRequest.status)) }}%</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div class="w-full bg-gray-200 rounded-sm h-2">
                                     <div 
-                                        class="bg-gradient-to-r from-bnhs-blue to-bnhs-blue-600 h-3 rounded-full transition-all duration-500 ease-out"
+                                        class="bg-bnhs-blue h-2 rounded-sm transition-all duration-300"
                                         :style="{ width: getProgressPercentage(latestRequest.status) + '%' }"
                                     ></div>
                                 </div>
                             </div>
 
                             <!-- Progress Steps -->
-                            <div class="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
+                            <div class="grid grid-cols-5 gap-2 mb-6">
                                 <div 
                                     v-for="(step, index) in progressSteps" 
                                     :key="step.key"
-                                    class="flex items-center space-x-3 sm:flex-col sm:space-x-0 sm:space-y-2 sm:text-center flex-1"
+                                    class="flex flex-col items-center text-center"
                                 >
-                                    <div class="flex items-center">
-                                        <div 
-                                            :class="[
-                                                'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300',
-                                                isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'
-                                                    ? 'bg-green-500 border-green-500 text-white'
-                                                    : isStepActive(index, latestRequest.status) && latestRequest.status !== 'Rejected'
-                                                    ? 'bg-bnhs-blue border-bnhs-blue text-white'
-                                                    : latestRequest.status === 'Rejected'
-                                                    ? 'bg-red-500 border-red-500 text-white'
-                                                    : 'bg-gray-100 border-gray-300 text-gray-500'
-                                            ]"
-                                        >
-                                            <svg v-if="isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                            <svg v-else-if="latestRequest.status === 'Rejected'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                            </svg>
-                                            <span v-else class="text-sm font-medium">{{ index + 1 }}</span>
-                                        </div>
-                                        
-                                        <!-- Connector line -->
-                                        <div 
-                                            v-if="index < progressSteps.length - 1"
-                                            :class="[
-                                                'h-0.5 w-8 ml-2 sm:hidden transition-all duration-300',
-                                                isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'
-                                                    ? 'bg-green-500'
-                                                    : 'bg-gray-300'
-                                            ]"
-                                        ></div>
+                                    <div 
+                                        :class="[
+                                            'flex h-10 w-10 items-center justify-center rounded-full border-2 mb-2',
+                                            isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                ? 'bg-green-600 border-green-600 text-white'
+                                                : isStepActive(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                ? 'bg-bnhs-blue border-bnhs-blue text-white'
+                                                : latestRequest.status === 'Rejected'
+                                                ? 'bg-red-600 border-red-600 text-white'
+                                                : 'bg-white border-gray-300 text-gray-400'
+                                        ]"
+                                    >
+                                        <svg v-if="isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <svg v-else-if="latestRequest.status === 'Rejected'" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        <span v-else class="text-sm font-semibold">{{ index + 1 }}</span>
                                     </div>
-                                    
-                                    <div class="flex-1 sm:flex-none">
-                                        <h3 
-                                            :class="[
-                                                'text-sm font-semibold transition-colors duration-300',
-                                                isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'
-                                                    ? 'text-green-600'
-                                                    : isStepActive(index, latestRequest.status) && latestRequest.status !== 'Rejected'
-                                                    ? 'text-bnhs-blue'
-                                                    : latestRequest.status === 'Rejected'
-                                                    ? 'text-red-600'
-                                                    : 'text-gray-500'
-                                            ]"
-                                        >
-                                            {{ step.label }}
-                                        </h3>
-                                        <p class="text-xs text-gray-600 mt-1 sm:max-w-20 sm:text-center">{{ step.description }}</p>
-                                    </div>
+                                    <h3 
+                                        :class="[
+                                            'text-xs font-semibold mb-1',
+                                            isStepCompleted(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                ? 'text-green-600'
+                                                : isStepActive(index, latestRequest.status) && latestRequest.status !== 'Rejected'
+                                                ? 'text-bnhs-blue'
+                                                : latestRequest.status === 'Rejected'
+                                                ? 'text-red-600'
+                                                : 'text-gray-500'
+                                        ]"
+                                    >
+                                        {{ step.label }}
+                                    </h3>
                                 </div>
                             </div>
 
-                            <!-- Current Status Info -->
-                            <div class="mt-6 p-4 rounded-lg border border-gray-200 bg-gray-50">
-                                <div class="flex items-start gap-3">
+                            <!-- Status Info -->
+                            <div class="border-t border-gray-200 pt-4 grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1">Current Status</p>
+                                    <p class="text-sm text-gray-900">{{ latestRequest.status_description }}</p>
+                                </div>
+                                <div v-if="latestRequest.estimated_completion_date">
+                                    <p class="text-xs text-gray-500 mb-1">Estimated Completion</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ latestRequest.estimated_completion_date }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Activity Timeline -->
+                            <div v-if="latestRequest.activity_logs && latestRequest.activity_logs.length > 0" class="border-t border-gray-200 mt-4 pt-4">
+                                <h4 class="text-sm font-semibold text-gray-900 mb-3">Recent Activity</h4>
+                                <div class="space-y-2">
                                     <div 
-                                        :class="[
-                                            'flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0',
-                                            latestRequest.status === 'Rejected'
-                                                ? 'bg-red-100 text-red-600'
-                                                : latestRequest.status === 'Completed'
-                                                ? 'bg-green-100 text-green-600'
-                                                : 'bg-blue-100 text-bnhs-blue'
-                                        ]"
+                                        v-for="(log, index) in latestRequest.activity_logs.slice(0, 3)" 
+                                        :key="log.id"
+                                        class="flex gap-3 text-sm"
                                     >
-                                        <svg v-if="latestRequest.status === 'Rejected'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                        </svg>
-                                        <svg v-else-if="latestRequest.status === 'Completed'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                        <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h4 class="font-medium text-gray-900">Current Status: {{ latestRequest.status }}</h4>
-                                        <p class="text-sm text-gray-600 mt-1">{{ latestRequest.status_description }}</p>
-                                        <p class="text-xs text-gray-500 mt-2">Document Type: {{ latestRequest.document_type }}</p>
-                                        <div v-if="latestRequest.estimated_completion_date" class="text-xs text-gray-500 mt-1">
-                                            Estimated Completion: {{ latestRequest.estimated_completion_date }}
+                                        <div class="flex-shrink-0">
+                                            <div class="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100">
+                                                <svg class="h-3 w-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="getActionIcon(log.action)"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-medium text-gray-900">{{ formatActionName(log.action) }}</p>
+                                            <p v-if="log.new_value" class="text-xs text-gray-600">{{ log.new_value }}</p>
+                                            <p class="text-xs text-gray-500">{{ log.created_at }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -347,185 +382,191 @@ const isStepActive = (stepIndex: number, currentStatus: string) => {
 
                     <!-- Welcome Message for New Users -->
                     <div v-else class="mb-6">
-                        <div class="rounded-xl bg-gradient-to-r from-bnhs-blue to-bnhs-blue-600 p-6 text-white shadow-lg">
-                            <div class="text-center">
-                                <h1 class="text-2xl font-bold lg:text-3xl">Welcome, {{ displayName }}!</h1>
-                                <p class="mt-2 text-blue-100">Get started by submitting your first document request</p>
-                                <Link
-                                    :href="route('request.select')"
-                                    class="mt-4 inline-flex items-center gap-2 rounded-lg bg-white/20 px-6 py-3 text-sm font-medium text-white transition hover:bg-white/30"
-                                >
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    Submit New Request
-                                </Link>
+                        <div class="bg-white border border-gray-200 rounded-lg p-8 text-center">
+                            <div class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4">
+                                <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
                             </div>
+                            <h1 class="text-xl font-bold text-gray-900">Welcome, {{ displayName }}!</h1>
+                            <p class="mt-2 text-gray-600">Get started by submitting your first document request</p>
+                            <Link
+                                :href="route('request.select')"
+                                class="mt-6 inline-flex items-center gap-2 bg-bnhs-blue px-6 py-2 text-sm font-medium text-white rounded hover:bg-bnhs-blue-600 transition"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Submit New Request
+                            </Link>
                         </div>
                     </div>
 
-                    <!-- Header -->
-                    <div class="mb-6">
-                        <h2 class="text-xl font-bold text-gray-900 lg:text-2xl">My Requests</h2>
-                        <p class="mt-1 text-gray-600">Track and manage your document requests</p>
-                    </div>
-
-                    <!-- No Requests State -->
-                    <div v-if="!hasRequests" class="rounded-xl bg-white p-8 text-center shadow-sm">
-                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-                            <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="mt-4 text-lg font-semibold text-gray-900">No Requests Yet</h3>
-                        <p class="mt-2 text-gray-600">Get started by submitting your first document request.</p>
-                        <Link
-                            :href="route('request.select')"
-                            class="mt-6 inline-flex items-center gap-2 rounded-lg bg-bnhs-blue px-6 py-3 text-sm font-medium text-white transition hover:bg-bnhs-blue-600"
-                        >
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Submit New Request
-                        </Link>
-                    </div>
-
-                    <!-- Latest Request -->
-                    <div v-else>
-                        <div class="mb-6 rounded-xl bg-white p-6 shadow-sm">
-                            <div class="mb-4 flex items-start justify-between">
-                                <div>
-                                    <h2 class="text-lg font-semibold text-gray-900">Latest Request</h2>
-                                    <p class="mt-1 text-sm text-gray-600">{{ latestRequest?.created_at }}</p>
-                                </div>
-                                <span
-                                    :class="[
-                                        'rounded-full border px-3 py-1 text-xs font-medium',
-                                        getStatusBadgeClass(latestRequest?.status || '')
-                                    ]"
-                                >
-                                    {{ latestRequest?.status }}
-                                </span>
-                            </div>
-
-                            <!-- Tracking Code -->
-                            <div class="mb-6 rounded-lg bg-gradient-to-r from-bnhs-blue-50 to-bnhs-blue-100 p-4">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-xs font-medium text-bnhs-blue">Tracking Code</p>
-                                        <p class="mt-1 text-2xl font-bold tracking-wider text-bnhs-blue">
-                                            {{ latestRequest?.tracking_id }}
-                                        </p>
-                                    </div>
-                                    <button
-                                        @click="copyToClipboard(latestRequest?.tracking_id || '')"
-                                        :class="[
-                                            'rounded-lg p-2 transition',
-                                            copied ? 'bg-green-100 text-green-600' : 'bg-white text-bnhs-blue hover:bg-bnhs-blue-50'
-                                        ]"
-                                        :title="copied ? 'Copied!' : 'Copy to clipboard'"
-                                    >
-                                        <svg v-if="!copied" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                        </svg>
-                                        <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Status Description -->
-                            <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                                <p class="text-sm text-gray-700">{{ latestRequest?.status_description }}</p>
-                            </div>
-
-                            <!-- Request Details -->
-                            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500">Document Type</p>
-                                    <p class="mt-1 font-medium text-gray-900">{{ latestRequest?.document_type }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500">Quantity</p>
-                                    <p class="mt-1 font-medium text-gray-900">{{ latestRequest?.quantity }} copy/copies</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500">Date Requested</p>
-                                    <p class="mt-1 font-medium text-gray-900">{{ latestRequest?.created_at }}</p>
-                                </div>
-                                <div v-if="latestRequest?.estimated_completion_date">
-                                    <p class="text-xs font-medium text-gray-500">Estimated Completion</p>
-                                    <p class="mt-1 font-medium text-gray-900">{{ latestRequest.estimated_completion_date }}</p>
-                                </div>
-                                <div v-if="latestRequest?.completed_at">
-                                    <p class="text-xs font-medium text-gray-500">Date Completed</p>
-                                    <p class="mt-1 font-medium text-green-600">{{ latestRequest.completed_at }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500">Last Updated</p>
-                                    <p class="mt-1 font-medium text-gray-900">{{ latestRequest?.updated_at }}</p>
-                                </div>
-                            </div>
-
-                            <!-- Purpose -->
-                            <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                                <p class="text-xs font-medium text-gray-500">Purpose</p>
-                                <p class="mt-1 text-sm text-gray-900">{{ latestRequest?.purpose }}</p>
-                            </div>
-
-                            <!-- Admin Notes -->
-                            <div v-if="latestRequest?.admin_notes" class="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                                <p class="text-xs font-medium text-yellow-800">Admin Notes</p>
-                                <p class="mt-1 text-sm text-yellow-900">{{ latestRequest.admin_notes }}</p>
-                            </div>
+                    <!-- My Requests Section -->
+                    <div v-if="hasRequests">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h2 class="text-lg font-bold text-gray-900">My Requests</h2>
+                            <Link
+                                :href="route('request.select')"
+                                class="text-sm text-bnhs-blue hover:underline font-medium"
+                            >
+                                + New Request
+                            </Link>
                         </div>
 
-                        <!-- Request History -->
-                        <div v-if="requestHistory && requestHistory.length > 0" class="rounded-xl bg-white shadow-sm">
-                            <div class="border-b border-gray-200 p-6">
-                                <h2 class="text-lg font-semibold text-gray-900">Request History</h2>
-                                <p class="mt-1 text-sm text-gray-600">Your previous document requests</p>
-                            </div>
-                            <div class="divide-y divide-gray-200">
-                                <div
-                                    v-for="request in requestHistory"
-                                    :key="request.id"
-                                    class="p-6 transition hover:bg-gray-50"
+                        <div class="bg-white border border-gray-200 rounded-lg divide-y divide-gray-200">
+                            <!-- Latest Request -->
+                            <div v-if="latestRequest">
+                                <button
+                                    @click="toggleRequestExpanded(latestRequest.id)"
+                                    class="w-full p-4 text-left hover:bg-gray-50 transition"
                                 >
-                                    <div class="flex items-start justify-between">
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-3">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2 mb-2">
                                                 <span
                                                     :class="[
-                                                        'rounded-full border px-3 py-1 text-xs font-medium',
+                                                        'px-2 py-1 text-xs font-medium rounded border',
+                                                        getStatusBadgeClass(latestRequest.status)
+                                                    ]"
+                                                >
+                                                    {{ latestRequest.status }}
+                                                </span>
+                                                <span class="text-xs font-mono text-gray-500">{{ latestRequest.tracking_id }}</span>
+                                            </div>
+                                            <h3 class="font-semibold text-gray-900">{{ latestRequest.document_type }}</h3>
+                                            <p class="text-sm text-gray-600 mt-1">Requested {{ latestRequest.created_at }}</p>
+                                        </div>
+                                        <svg 
+                                            :class="[
+                                                'h-5 w-5 text-gray-400 transition-transform',
+                                                expandedRequests[latestRequest.id] ? 'rotate-180' : ''
+                                            ]" 
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </button>
+
+                                <!-- Expanded Details -->
+                                <div v-if="expandedRequests[latestRequest.id]" class="border-t border-gray-200 bg-gray-50 p-4">
+                                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Quantity</p>
+                                            <p class="text-sm font-medium text-gray-900">{{ latestRequest.quantity }} {{ latestRequest.quantity === 1 ? 'copy' : 'copies' }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Category</p>
+                                            <p class="text-sm font-medium text-gray-900">{{ latestRequest.document_category }}</p>
+                                        </div>
+                                        <div v-if="latestRequest.estimated_completion_date">
+                                            <p class="text-xs text-gray-500 mb-1">Est. Completion</p>
+                                            <p class="text-sm font-medium text-gray-900">{{ latestRequest.estimated_completion_date }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Last Updated</p>
+                                            <p class="text-sm font-medium text-gray-900">{{ latestRequest.updated_at }}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-200 pt-3 mb-3">
+                                        <p class="text-xs text-gray-500 mb-1">Purpose</p>
+                                        <p class="text-sm text-gray-900">{{ latestRequest.purpose }}</p>
+                                    </div>
+
+                                    <div v-if="latestRequest.admin_notes" class="bg-yellow-50 border border-yellow-200 rounded p-3">
+                                        <p class="text-xs font-semibold text-yellow-900 mb-1">Admin Notes</p>
+                                        <p class="text-sm text-yellow-900">{{ latestRequest.admin_notes }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Previous Requests -->
+                            <div
+                                v-for="request in requestHistory"
+                                :key="request.id"
+                            >
+                                <button
+                                    @click="toggleRequestExpanded(request.id)"
+                                    class="w-full p-4 text-left hover:bg-gray-50 transition"
+                                >
+                                    <div class="flex items-center justify-between gap-4">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <span
+                                                    :class="[
+                                                        'px-2 py-1 text-xs font-medium rounded border',
                                                         getStatusBadgeClass(request.status)
                                                     ]"
                                                 >
                                                     {{ request.status }}
                                                 </span>
-                                                <span class="text-sm font-mono font-medium text-gray-900">
-                                                    {{ request.tracking_id }}
-                                                </span>
+                                                <span class="text-xs font-mono text-gray-500">{{ request.tracking_id }}</span>
                                             </div>
-                                            <p class="mt-2 font-medium text-gray-900">{{ request.document_type }}</p>
-                                            <p class="mt-1 text-sm text-gray-600">{{ request.status_description }}</p>
-                                            <div class="mt-3 flex flex-wrap gap-4 text-xs text-gray-500">
-                                                <span>Requested: {{ request.created_at }}</span>
-                                                <span v-if="request.estimated_completion_date">
-                                                    Est. Completion: {{ request.estimated_completion_date }}
-                                                </span>
-                                                <span v-if="request.completed_at">Completed: {{ request.completed_at }}</span>
+                                            <h3 class="font-semibold text-gray-900">{{ request.document_type }}</h3>
+                                            <p class="text-sm text-gray-600 mt-1">Requested {{ request.created_at }}</p>
+                                        </div>
+                                        <svg 
+                                            :class="[
+                                                'h-5 w-5 text-gray-400 transition-transform',
+                                                expandedRequests[request.id] ? 'rotate-180' : ''
+                                            ]" 
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </button>
+
+                                <!-- Expanded Details -->
+                                <div v-if="expandedRequests[request.id]" class="border-t border-gray-200 bg-gray-50 p-4">
+                                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Quantity</p>
+                                            <p class="text-sm font-medium text-gray-900">{{ request.quantity }} {{ request.quantity === 1 ? 'copy' : 'copies' }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Category</p>
+                                            <p class="text-sm font-medium text-gray-900">{{ request.document_category }}</p>
+                                        </div>
+                                        <div v-if="request.estimated_completion_date">
+                                            <p class="text-xs text-gray-500 mb-1">Est. Completion</p>
+                                            <p class="text-sm font-medium text-gray-900">{{ request.estimated_completion_date }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Last Updated</p>
+                                            <p class="text-sm font-medium text-gray-900">{{ request.updated_at }}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-200 pt-3 mb-3">
+                                        <p class="text-xs text-gray-500 mb-1">Purpose</p>
+                                        <p class="text-sm text-gray-900">{{ request.purpose }}</p>
+                                    </div>
+
+                                    <div v-if="request.admin_notes" class="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3">
+                                        <p class="text-xs font-semibold text-yellow-900 mb-1">Admin Notes</p>
+                                        <p class="text-sm text-yellow-900">{{ request.admin_notes }}</p>
+                                    </div>
+
+                                    <!-- Activity Timeline -->
+                                    <div v-if="request.activity_logs && request.activity_logs.length > 0" class="border-t border-gray-200 pt-3">
+                                        <p class="text-xs font-semibold text-gray-700 mb-2">Activity</p>
+                                        <div class="space-y-2">
+                                            <div 
+                                                v-for="log in request.activity_logs.slice(0, 5)" 
+                                                :key="log.id"
+                                                class="text-xs text-gray-600"
+                                            >
+                                                <span class="font-medium">{{ formatActionName(log.action) }}</span>
+                                                <span v-if="log.new_value"> - {{ log.new_value }}</span>
+                                                <span class="text-gray-500"> ({{ log.created_at }})</span>
                                             </div>
                                         </div>
-                                        <button
-                                            @click="copyToClipboard(request.tracking_id)"
-                                            class="ml-4 rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-                                        >
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                            </svg>
-                                        </button>
                                     </div>
                                 </div>
                             </div>

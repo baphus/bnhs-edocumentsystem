@@ -115,7 +115,7 @@ class UserDashboardController extends Controller
         $email = session('dashboard_verified_email');
 
         // Get all requests for this email, ordered by latest first
-        $requests = DocumentRequest::with('documentType')
+        $requests = DocumentRequest::with(['documentType', 'logs.user'])
             ->where('email', $email)
             ->latest()
             ->get()
@@ -134,6 +134,17 @@ class UserDashboardController extends Controller
                     'created_at' => $req->created_at->format('F d, Y h:i A'),
                     'updated_at' => $req->updated_at->format('F d, Y h:i A'),
                     'admin_notes' => $req->admin_notes,
+                    'activity_logs' => $req->logs->map(function ($log) {
+                        return [
+                            'id' => $log->id,
+                            'action' => $log->action,
+                            'description' => $log->description,
+                            'old_value' => $log->old_value,
+                            'new_value' => $log->new_value,
+                            'user_name' => $log->user?->name ?? 'System',
+                            'created_at' => $log->created_at->format('F d, Y h:i A'),
+                        ];
+                    }),
                 ];
             });
 
