@@ -99,7 +99,7 @@ const handlePhotoUpload = (e: Event) => {
 };
 
 const submitForm = () => {
-    form.post(route('registrar.requests.store'), {
+    form.post(route('admin.requests.store'), {
         forceFormData: true,
         onSuccess: () => {
             showCreateModal.value = false;
@@ -147,7 +147,8 @@ const bulkUpdate = () => {
         return;
     }
 
-    router.post(route('registrar.requests.bulk-update'), {
+    router.post(route('admin.requests.bulk'), {
+        action: 'status_update',
         request_ids: selectedRequests,
         status: bulkStatus.value || undefined,
         admin_notes: bulkNotes.value || undefined,
@@ -173,7 +174,8 @@ const bulkDelete = () => {
         return;
     }
 
-    router.post(route('registrar.requests.bulk-delete'), {
+    router.post(route('admin.requests.bulk'), {
+        action: 'delete',
         request_ids: selectedRequests,
     }, {
         onSuccess: () => {
@@ -219,7 +221,7 @@ const saveEdit = (requestId: number) => {
     const form = editForm.value[requestId];
     if (!form) return;
 
-    router.patch(route('registrar.requests.update', requestId), form, {
+    router.patch(route('admin.requests.update', requestId), form, {
         preserveScroll: true,
         onSuccess: () => {
             editingRequest.value = null;
@@ -250,7 +252,7 @@ const saveEdit = (requestId: number) => {
                     :statuses="statuses"
                     :documentTypes="documentTypes"
                     :isSuperadmin="isAdmin"
-                    routePrefix="registrar.requests"
+                    routePrefix="admin.requests"
                     @export="exportCsv"
                     @createRequest="showCreateModal = true"
                 >
@@ -312,14 +314,14 @@ const saveEdit = (requestId: number) => {
                             </td>
                             <td v-if="columnVisibility.tracking_id" class="whitespace-nowrap px-6 py-4">
                                 <Link
-                                    :href="route('registrar.requests.show', { id: request.id, ...filters })"
+                                    :href="route('admin.requests.show', { id: request.id, ...filters })"
                                     class="font-mono font-medium text-bnhs-blue hover:underline"
                                 >
                                     {{ request.tracking_id }}
                                 </Link>
                             </td>
                             <td v-if="columnVisibility.requester" class="px-6 py-4">
-                                <div v-if="!isSuperadmin || editingRequest !== request.id">
+                                <div v-if="!isAdmin || editingRequest !== request.id">
                                     <p class="font-medium text-gray-900">
                                         {{ request.first_name }} {{ request.middle_name ? request.middle_name.charAt(0) + '.' : '' }} {{ request.last_name }}
                                     </p>
@@ -347,7 +349,7 @@ const saveEdit = (requestId: number) => {
                                 </div>
                             </td>
                             <td v-if="columnVisibility.lrn" class="whitespace-nowrap px-6 py-4 font-mono text-sm text-gray-500">
-                                <span v-if="!isSuperadmin || editingRequest !== request.id">{{ request.lrn }}</span>
+                                <span v-if="!isAdmin || editingRequest !== request.id">{{ request.lrn }}</span>
                                 <input
                                     v-else
                                     v-model="editForm[request.id].lrn"
@@ -358,7 +360,7 @@ const saveEdit = (requestId: number) => {
                                 />
                             </td>
                             <td v-if="columnVisibility.email" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                <span v-if="!isSuperadmin || editingRequest !== request.id">{{ request.student_email }}</span>
+                                <span v-if="!isAdmin || editingRequest !== request.id">{{ request.student_email }}</span>
                                 <input
                                     v-else
                                     v-model="editForm[request.id].email"
@@ -371,7 +373,7 @@ const saveEdit = (requestId: number) => {
                                 {{ request.document_type?.name }}
                             </td>
                             <td v-if="columnVisibility.status" class="whitespace-nowrap px-6 py-4">
-                                <span v-if="!isSuperadmin || editingRequest !== request.id" :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]">
+                                <span v-if="!isAdmin || editingRequest !== request.id" :class="['rounded-full px-2 py-1 text-xs font-medium', getStatusColor(request.status)]">
                                     {{ request.status }}
                                 </span>
                                 <select
@@ -384,11 +386,17 @@ const saveEdit = (requestId: number) => {
                                     </option>
                                 </select>
                             </td>
+                            <td v-if="columnVisibility.otp_verified && isAdmin" class="whitespace-nowrap px-6 py-4">
+                                <span :class="request.otp_verified ? 'text-green-600' : 'text-red-600'">
+                                    <svg v-if="request.otp_verified" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </span>
+                            </td>
                             <td v-if="columnVisibility.date" class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                 {{ formatDate(request.created_at) }}
                             </td>
                             <td v-if="columnVisibility.actions" class="whitespace-nowrap px-6 py-4 text-right">
-                                <div v-if="isSuperadmin && editingRequest !== request.id" class="flex justify-end gap-2">
+                                <div v-if="isAdmin && editingRequest !== request.id" class="flex justify-end gap-2">
                                     <button
                                         @click="startEditing(request)"
                                         class="text-bnhs-blue hover:underline text-sm"
@@ -396,15 +404,15 @@ const saveEdit = (requestId: number) => {
                                         Edit
                                     </button>
                                     <Link
-                                        :href="route('registrar.requests.show', { id: request.id, ...filters })"
+                                        :href="route('admin.requests.show', { id: request.id, ...filters })"
                                         class="text-bnhs-blue hover:underline text-sm"
                                     >
                                         View
                                     </Link>
                                 </div>
-                                <div v-else-if="!isSuperadmin" class="flex justify-end">
+                                <div v-else-if="!isAdmin" class="flex justify-end">
                                     <Link
-                                        :href="route('registrar.requests.show', request.id)"
+                                        :href="route('admin.requests.show', request.id)"
                                         class="text-bnhs-blue hover:underline text-sm"
                                     >
                                         View

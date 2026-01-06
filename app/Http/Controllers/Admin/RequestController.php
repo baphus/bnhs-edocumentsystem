@@ -82,12 +82,17 @@ class RequestController extends Controller
             ->through(fn($req) => [
                 "id" => $req->id,
                 "tracking_id" => $req->tracking_id,
-                "full_name" => $req->full_name,
-                "email" => $req->email,
+                "first_name" => $req->first_name,
+                "middle_name" => $req->middle_name,
+                "last_name" => $req->last_name,
+                "student_email" => $req->email,
                 "lrn" => $req->lrn,
                 "grade_level" => $req->grade_level,
-                "document_type" => $req->documentType->name ?? "N/A",
-                "document_category" => $req->documentType->category ?? "N/A",
+                "document_type" => $req->documentType ? [
+                    "id" => $req->documentType->id,
+                    "name" => $req->documentType->name,
+                ] : null,
+                "document_type_id" => $req->document_type_id,
                 "status" => $req->status,
                 "otp_verified" => $req->otp_verified,
                 "created_at" => $req->created_at,
@@ -200,6 +205,7 @@ class RequestController extends Controller
             "request_ids" => ["required", "array"],
             "request_ids.*" => ["exists:document_requests,id"],
             "status" => ["required_if:action,status_update", Rule::in(["Pending", "Verified", "Processing", "Ready", "Completed", "Rejected"])],
+            "admin_notes" => ["nullable", "string"],
         ]);
 
         $requests = DocumentRequest::whereIn("id", $request->request_ids)->get();
@@ -224,7 +230,7 @@ class RequestController extends Controller
             case "status_update":
                 foreach ($requests as $req) {
                     $oldStatus = $req->status;
-                    $req->updateStatus($request->status, $request->user());
+                    $req->updateStatus($request->status, $request->user(), $request->admin_notes);
                     
                     // Update completed_at if status is Completed
                     if ($request->status === "Completed" && !$req->completed_at) {

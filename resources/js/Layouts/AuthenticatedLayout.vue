@@ -162,6 +162,17 @@ onUnmounted(() => {
                             Document Types
                         </SidebarLink>
 
+                        <!-- Audit Logs (Admin only) -->
+                        <SidebarLink
+                            v-if="isAdmin"
+                            :href="route('admin.audit-logs.index')"
+                            :active="route().current('admin.audit-logs.index')"
+                            :collapsed="sidebarCollapsed"
+                            icon="shield-check"
+                        >
+                            Audit Logs
+                        </SidebarLink>
+
                         <!-- System Logs (Admin only) -->
                         <SidebarLink
                             v-if="isAdmin"

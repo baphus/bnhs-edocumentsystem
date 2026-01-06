@@ -160,7 +160,7 @@ const formatDate = (date: string) => {
                 </div>
 
                 <!-- Document Types Table -->
-                <div class="overflow-hidden rounded-xl bg-white shadow">
+                <div class="overflow-x-auto rounded-xl bg-white shadow">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>

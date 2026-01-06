@@ -12,7 +12,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes, \App\Traits\Auditable;
 
     // Role constants
     public const ROLE_ADMIN = 'admin';

@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class DocumentRequest extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, \App\Traits\Auditable;
 
     /**
      * The attributes that are mass assignable.

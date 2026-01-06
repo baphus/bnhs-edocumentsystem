@@ -163,6 +163,9 @@ Route::middleware(["auth", "role:admin"])->prefix("admin")->name("admin.")->grou
     
     // Document Types CRUD
     Route::resource("document-types", DocumentTypeController::class);
+
+    // Audit Logs (New)
+    Route::get("/audit-logs", [\App\Http\Controllers\Admin\AuditLogController::class, "index"])->name("audit-logs.index");
     
     // System Logs
     Route::get("/logs", [SystemLogController::class, "index"])->name("logs.index");

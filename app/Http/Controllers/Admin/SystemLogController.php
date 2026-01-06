@@ -18,7 +18,8 @@ class SystemLogController extends Controller
     public function index(Request $request): Response
     {
         // Request Logs
-        $requestLogsQuery = RequestLog::with(['user', 'documentRequest']);
+        $requestLogsQuery = RequestLog::with(['user', 'documentRequest'])
+            ->whereNotNull('document_request_id');
 
         if ($request->has('action') && $request->action) {
             $requestLogsQuery->where('action', $request->action);
@@ -81,7 +82,7 @@ class SystemLogController extends Controller
             ]);
 
         // Get unique actions for filter
-        $actions = RequestLog::distinct()->pluck('action');
+        $actions = RequestLog::whereNotNull('document_request_id')->distinct()->pluck('action');
 
         // Get users for filter dropdown
         $users = User::select('id', 'name', 'email')
