@@ -1,0 +1,59 @@
+{
+  "name": "BNHS eDocument System",
+  "description": "Document request management system for BNHS",
+  "keywords": ["laravel", "php", "document-management"],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    },
+    {
+      "url": "heroku/php"
+    }
+  ],
+  "env": {
+    "APP_NAME": {
+      "description": "Application name",
+      "value": "BNHS eDocument System"
+    },
+    "APP_ENV": {
+      "description": "Application environment",
+      "value": "production"
+    },
+    "APP_KEY": {
+      "description": "Laravel encryption key (generate with 'php artisan key:generate --show')",
+      "generator": "secret"
+    },
+    "APP_DEBUG": {
+      "description": "Enable debug mode (should be false in production)",
+      "value": "false"
+    },
+    "LOG_CHANNEL": {
+      "description": "Logging channel",
+      "value": "stack"
+    },
+    "DB_CONNECTION": {
+      "description": "Database connection type",
+      "value": "pgsql"
+    },
+    "QUEUE_CONNECTION": {
+      "description": "Queue driver",
+      "value": "database"
+    },
+    "SESSION_DRIVER": {
+      "description": "Session storage driver",
+      "value": "database"
+    },
+    "CACHE_STORE": {
+      "description": "Cache driver",
+      "value": "database"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache"
+  }
+}
