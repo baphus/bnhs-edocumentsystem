@@ -71,13 +71,12 @@
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
         ],
         "post-install-cmd": [
-            "@php -r \"if (!getenv('RAILWAY_ENVIRONMENT') && !getenv('CI') && !getenv('NIXPACKS_BUILD')) { system('php artisan optimize:clear'); }\"",
+            "@php -r \"if (!getenv('RAILWAY_ENVIRONMENT') && !getenv('CI') && !getenv('NIXPACKS_BUILD') && !getenv('HEROKU')) { system('php artisan optimize:clear'); }\"",
             "chmod -R 755 bootstrap/cache || true",
             "chmod -R 755 storage || true"
         ],
         "compile": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
-            "@php artisan optimize:clear"
+            "echo 'Build completed successfully'"
         ]
     },
     "extra": {
