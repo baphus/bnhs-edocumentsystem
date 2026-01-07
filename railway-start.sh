@@ -19,15 +19,16 @@ if [ ! -L public/storage ]; then
     php artisan storage:link
 fi
 
-# Clear and cache config
-echo "-----> Caching configuration"
+# Run migrations first to ensure database is ready
+echo "-----> Running database migrations"
+php artisan migrate --force --no-interaction
+
+# Now clear and cache config (after database is available)
+echo "-----> Clearing and caching configuration"
+php artisan config:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
-
-# Run migrations
-echo "-----> Running database migrations"
-php artisan migrate --force --no-interaction
 
 # Seed default settings if needed (only on first deploy)
 php artisan db:seed --class=SettingsSeeder --force
