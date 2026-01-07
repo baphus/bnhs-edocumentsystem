@@ -1,1 +1,1 @@
-web: vendor/bin/heroku-php-apache2 -i composer.json
+web: vendor/bin/heroku-php-apache2 public/
