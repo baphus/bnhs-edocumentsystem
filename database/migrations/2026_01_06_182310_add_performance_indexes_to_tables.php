@@ -20,7 +20,8 @@ return new class extends Migration
                 // Only add new indexes not in previous migrations
                 $table->index(['user_role', 'created_at'], 'idx_role_date');
                 $table->index(['model_type', 'created_at'], 'idx_model_date');
-                $table->index('description'); // For LIKE searches
+                // Note: description is TEXT type - cannot be indexed without prefix length
+                // For LIKE searches, consider full-text search or limiting query scope
             }
         });
 
@@ -52,8 +53,8 @@ return new class extends Migration
         // Add indexes to email_logs (status index already exists in create migration)
         Schema::table('email_logs', function (Blueprint $table) use ($driver) {
             if ($driver !== 'sqlite') {
-                // Composite index not covered by previous migration
-                $table->index('email', 'idx_email_email');
+                // Note: recipient_email already has an index in the create migration
+                // No additional indexes needed
             }
         });
 
@@ -81,7 +82,7 @@ return new class extends Migration
         Schema::table('audit_logs', function (Blueprint $table) {
             $table->dropIndex('idx_role_date');
             $table->dropIndex('idx_model_date');
-            $table->dropIndex(['description']);
+            // description index was not created (TEXT column)
         });
 
         Schema::table('document_requests', function (Blueprint $table) {
@@ -100,7 +101,7 @@ return new class extends Migration
         });
 
         Schema::table('email_logs', function (Blueprint $table) {
-            $table->dropIndex('idx_email_email');
+            // No custom indexes to drop (recipient_email managed by create migration)
         });
 
         Schema::table('document_types', function (Blueprint $table) {

@@ -50,13 +50,8 @@ return new class extends Migration
               $table->index(['status', 'created_at']);
         });
 
-        // Index for sessions table - skip on SQLite to avoid duplicate index errors in dev/test
-        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
-            Schema::table('sessions', function (Blueprint $table) {
-                $table->index(['user_id']);
-                $table->index(['last_activity']);
-            });
-        }
+        // Note: sessions table indexes (user_id, last_activity) already exist
+        // from Laravel's default sessions migration (0001_01_01_000000_create_users_table.php)
     }
 
     /**
@@ -96,11 +91,7 @@ return new class extends Migration
               $table->dropIndex(['status', 'created_at']);
         });
 
-        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
-            Schema::table('sessions', function (Blueprint $table) {
-                $table->dropIndex(['user_id']);
-                $table->dropIndex(['last_activity']);
-            });
-        }
+        // Note: sessions table indexes are not dropped as they're managed
+        // by Laravel's default sessions migration
     }
 };

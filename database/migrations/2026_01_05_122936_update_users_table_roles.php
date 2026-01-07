@@ -16,9 +16,10 @@ return new class extends Migration
             // Update the role enum to include new roles
             $table->enum('role', ['admin', 'registrar', 'guest'])->default('guest')->change();
             
-            // Add status column if it doesn't exist
-            if (!Schema::hasColumn('users', 'status')) {
-                $table->enum('status', ['active', 'inactive'])->default('active')->after('role');
+            // Status column already exists from previous migration (with 'active', 'suspended')
+            // Modify it to include both old and new values for compatibility
+            if (Schema::hasColumn('users', 'status')) {
+                $table->enum('status', ['active', 'suspended', 'inactive'])->default('active')->change();
             }
             
             // Add last_login_at column if it doesn't exist
