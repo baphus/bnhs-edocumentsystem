@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,16 +12,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('activity_logs', function (Blueprint $table) {
+        Schema::create('document_types', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('request_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('action');
-            $table->text('description')->nullable();
+            $table->string('name');
+            $table->string('category', 255);
             $table->timestamps();
-
-            $table->index(['request_id', 'created_at']);
         });
+        
+        DB::statement("ALTER TABLE document_types ADD CONSTRAINT document_types_category_check CHECK (category IN ('Official', 'Informal', 'Certified'))");
     }
 
     /**
@@ -28,7 +27,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('activity_logs');
+        Schema::dropIfExists('document_types');
     }
 };
 

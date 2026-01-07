@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,7 +17,7 @@ return new class extends Migration
             $table->foreignId('document_request_id')->nullable()->constrained('document_requests')->onDelete('set null');
             $table->string('recipient_email');
             $table->string('subject');
-            $table->enum('status', ['queued', 'sent', 'delivered', 'failed'])->default('queued');
+            $table->string('status', 255)->default('queued');
             $table->text('error_message')->nullable();
             $table->timestamp('sent_at')->nullable();
             $table->timestamp('delivered_at')->nullable();
@@ -26,6 +27,8 @@ return new class extends Migration
             $table->index('recipient_email');
             $table->index('status');
         });
+        
+        DB::statement("ALTER TABLE email_logs ADD CONSTRAINT email_logs_status_check CHECK (status IN ('queued', 'sent', 'delivered', 'failed'))");
     }
 
     /**

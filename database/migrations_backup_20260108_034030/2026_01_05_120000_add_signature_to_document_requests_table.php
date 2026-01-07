@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('document_types', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->enum('category', ['Official', 'Informal', 'Certified']);
-            $table->timestamps();
+        Schema::table('document_requests', function (Blueprint $table) {
+            $table->text('signature')->nullable();
         });
     }
 
@@ -24,7 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('document_types');
+        Schema::table('document_requests', function (Blueprint $table) {
+            $table->dropColumn('signature');
+        });
     }
 };
-

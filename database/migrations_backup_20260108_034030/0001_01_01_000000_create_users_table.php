@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -17,10 +18,13 @@ return new class extends Migration
             $table->string('email')->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['registrar', 'principal', 'student'])->default('student');
+            $table->string('role', 255)->default('student');
             $table->rememberToken();
             $table->timestamps();
         });
+        
+        // Add check constraint for PostgreSQL
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('registrar', 'principal', 'student'))");
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
@@ -33,7 +37,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->index();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
-            $table->longText('payload');
+            $table->text('payload');
             $table->integer('last_activity')->index();
         });
     }

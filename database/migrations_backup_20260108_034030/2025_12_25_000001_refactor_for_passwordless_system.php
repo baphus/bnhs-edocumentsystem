@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -23,8 +24,10 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['superadmin', 'registrar'])->default('registrar')->after('password');
+            $table->string('role', 255)->default('registrar');
         });
+        
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('superadmin', 'registrar'))");
 
         // 3. Create new document_requests table with all student info embedded
         Schema::create('document_requests', function (Blueprint $table) {
@@ -50,14 +53,7 @@ return new class extends Migration
             $table->text('purpose');
             
             // Request Status
-            $table->enum('status', [
-                'Pending',
-                'Verified',
-                'Processing',
-                'Ready',
-                'Completed',
-                'Rejected'
-            ])->default('Pending');
+            $table->string('status', 255)->default('Pending');
             
             // Admin Notes (for registrar to add comments)
             $table->text('admin_notes')->nullable();
@@ -76,6 +72,8 @@ return new class extends Migration
             $table->index('lrn');
             $table->index('status');
         });
+        
+        DB::statement("ALTER TABLE document_requests ADD CONSTRAINT document_requests_status_check CHECK (status IN ('Pending', 'Verified', 'Processing', 'Ready', 'Completed', 'Rejected'))");
 
         // 4. Create request_logs table for tracking status changes
         Schema::create('request_logs', function (Blueprint $table) {
@@ -118,7 +116,7 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['registrar', 'principal', 'student'])->default('student')->after('password');
+            $table->string('role', 255)->default('student');
         });
 
         // Recreate old tables (simplified - would need full recreation in production)
@@ -137,7 +135,7 @@ return new class extends Migration
             $table->string('request_id')->unique();
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
             $table->foreignId('document_type_id')->constrained()->onDelete('cascade');
-            $table->enum('status', ['Pending', 'For Verification', 'Approved', 'Ready for Pickup', 'Released'])->default('Pending');
+            $table->string('status', 255)->default('Pending');
             $table->text('purpose');
             $table->text('remarks')->nullable();
             $table->timestamps();
