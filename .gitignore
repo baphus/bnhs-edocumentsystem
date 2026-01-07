@@ -25,3 +25,7 @@ Homestead.yaml
 Thumbs.db
 coverage/
 .nyc_output/
+
+# Railway
+.railway/
+railway.toml
