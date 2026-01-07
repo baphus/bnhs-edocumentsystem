@@ -40,7 +40,7 @@ export interface DocumentRequest {
     document_type?: DocumentType;
     purpose: string | null;
     status: 'Pending' | 'Verified' | 'Processing' | 'Ready' | 'Completed' | 'Rejected';
-    admin_notes: string | null;
+    admin_remarks: string | null;
     otp_code: string | null;
     otp_expires_at: string | null;
     otp_verified: boolean;

@@ -14,7 +14,7 @@ const props = defineProps<{
         document_category: string;
         purpose: string;
         status: string;
-        admin_notes: string | null;
+        admin_remarks: string | null;
         created_at: string;
         updated_at: string;
         logs: Array<{
@@ -105,7 +105,7 @@ const formatDateShort = (date: string) => {
 const formatAction = (action: string) => {
     const actionMap: Record<string, string> = {
         'status_change': 'Status Updated',
-        'note_updated': 'Notes Updated',
+        'remark_updated': 'Remarks Updated',
         'request_created': 'Request Created',
     };
     // Fallback: convert snake_case to Title Case
@@ -122,7 +122,7 @@ const getStatusDescription = (status: string) => {
         'Processing': 'Your document is currently being prepared.',
         'Ready': 'Your document is ready for pickup!',
         'Completed': 'Your request has been completed successfully.',
-        'Rejected': 'Your request has been rejected. Please check the admin notes for details.',
+            'Rejected': 'Your request has been rejected. Please check the admin remarks for details.',
     };
     return descriptions[status] || 'Status updated.';
 };
@@ -265,9 +265,9 @@ const getStatusDescription = (status: string) => {
                             </div>
                             <div class="flex-1">
                                 <h4 class="font-medium text-gray-900">Current Status: {{ request.status }}</h4>
-                                <div v-if="request.status === 'Rejected' && request.admin_notes" class="mt-1">
+                                <div v-if="request.status === 'Rejected' && request.admin_remarks" class="mt-1">
                                     <p class="text-sm text-red-600 font-medium">Request Rejected</p>
-                                    <p class="text-sm text-red-700">{{ request.admin_notes }}</p>
+                                    <p class="text-sm text-red-700">{{ request.admin_remarks }}</p>
                                 </div>
                                 <div v-else-if="request.status === 'Ready'" class="mt-1">
                                     <p class="text-sm text-green-600 font-medium">Your document is ready for pickup!</p>
@@ -354,15 +354,15 @@ const getStatusDescription = (status: string) => {
                 </div>
             </div>
 
-            <!-- Admin Notes -->
-            <div v-if="request.admin_notes && request.status !== 'Rejected'" class="mt-6 rounded-xl bg-bnhs-blue-50 border border-bnhs-blue-200 p-6 shadow-sm">
+            <!-- Admin Remarks -->
+            <div v-if="request.admin_remarks && request.status !== 'Rejected'" class="mt-6 rounded-xl bg-bnhs-blue-50 border border-bnhs-blue-200 p-6 shadow-sm">
                 <h3 class="flex items-center gap-2 text-lg font-semibold text-bnhs-blue">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    Admin Notes
+                    Admin Remarks
                 </h3>
-                <p class="mt-2 text-gray-700 whitespace-pre-wrap">{{ request.admin_notes }}</p>
+                <p class="mt-2 text-gray-700 whitespace-pre-wrap">{{ request.admin_remarks }}</p>
             </div>
 
             <!-- Activity Log -->

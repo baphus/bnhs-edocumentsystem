@@ -93,7 +93,7 @@ class TrackingController extends Controller
                 'document_category' => $documentRequest->documentType->category,
                 'purpose' => $documentRequest->purpose,
                 'status' => $documentRequest->status,
-                'admin_notes' => $documentRequest->admin_notes,
+                'admin_remarks' => $documentRequest->admin_remarks,
                 'created_at' => $documentRequest->created_at,
                 'updated_at' => $documentRequest->updated_at,
                 'logs' => $documentRequest->logs->map(fn($log) => [
@@ -145,7 +145,7 @@ class TrackingController extends Controller
                 'document_category' => $documentRequest->documentType->category,
                 'purpose' => $documentRequest->purpose,
                 'status' => $documentRequest->status,
-                'admin_notes' => $documentRequest->admin_notes,
+                'admin_remarks' => $documentRequest->admin_remarks,
                 'created_at' => $documentRequest->created_at,
                 'updated_at' => $documentRequest->updated_at,
                 'logs' => $documentRequest->logs->map(fn($log) => [

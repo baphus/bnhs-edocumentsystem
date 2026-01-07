@@ -20,7 +20,7 @@ const statusForm = useForm({
 });
 
 const notesForm = useForm({
-    admin_notes: props.request.admin_notes || '',
+    admin_remarks: props.request.admin_remarks || '',
 });
 
 const updateStatus = () => {
@@ -93,7 +93,7 @@ const formatDate = (date: string) => {
 const formatAction = (action: string) => {
     const actionMap: Record<string, string> = {
         'status_change': 'Status Updated',
-        'note_updated': 'Notes Updated',
+        'remark_updated': 'Remarks Updated',
         'request_created': 'Request Created',
     };
     // Fallback: convert snake_case to Title Case
@@ -212,7 +212,7 @@ const formatAction = (action: string) => {
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
-                            {{ request.admin_notes ? 'Edit Notes' : 'Add Notes' }}
+                            {{ request.admin_remarks ? 'Edit Remarks' : 'Add Remarks' }}
                         </button>
                     </div>
                 </div>
@@ -330,15 +330,15 @@ const formatAction = (action: string) => {
                             </div>
                         </div>
 
-                        <!-- Admin Notes -->
-                        <div v-if="request.admin_notes" class="rounded-xl bg-bnhs-blue-50 p-6 shadow">
+                        <!-- Admin Remarks -->
+                        <div v-if="request.admin_remarks" class="rounded-xl bg-bnhs-blue-50 p-6 shadow">
                             <h3 class="flex items-center gap-2 font-semibold text-bnhs-blue">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                                 </svg>
-                                Admin Notes
+                                Admin Remarks
                             </h3>
-                            <p class="mt-2 text-gray-700">{{ request.admin_notes }}</p>
+                            <p class="mt-2 text-gray-700">{{ request.admin_remarks }}</p>
                         </div>
                     </div>
                 </div>
@@ -422,21 +422,21 @@ const formatAction = (action: string) => {
             </div>
         </Teleport>
 
-        <!-- Notes Modal -->
+        <!-- Remarks Modal -->
         <Teleport to="body">
             <div v-if="showNotesModal" class="fixed inset-0 z-50 overflow-y-auto">
                 <div class="flex min-h-screen items-center justify-center p-4">
                     <div class="fixed inset-0 bg-black/50" @click="showNotesModal = false"></div>
                     <div class="relative w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-                        <h3 class="text-lg font-semibold text-gray-900">Admin Notes</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">Admin Remarks</h3>
                         <form @submit.prevent="updateNotes" class="mt-4">
                             <div>
-                                <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
+                                <label for="remarks" class="block text-sm font-medium text-gray-700">Remarks</label>
                                 <textarea
-                                    id="notes"
-                                    v-model="notesForm.admin_notes"
+                                    id="remarks"
+                                    v-model="notesForm.admin_remarks"
                                     rows="4"
-                                    placeholder="Add notes visible to the student..."
+                                    placeholder="Add remarks visible to the student..."
                                     class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bnhs-blue focus:ring-bnhs-blue"
                                 ></textarea>
                             </div>
@@ -453,7 +453,7 @@ const formatAction = (action: string) => {
                                     :disabled="notesForm.processing"
                                     class="rounded-lg bg-bnhs-blue px-4 py-2 text-sm font-medium text-white hover:bg-bnhs-blue-600 disabled:opacity-50"
                                 >
-                                    Save Notes
+                                    Save Remarks
                                 </button>
                             </div>
                         </form>

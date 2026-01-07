@@ -37,7 +37,7 @@ class DocumentRequest extends Model
         'status',
         'estimated_completion_date',
         'completed_at',
-        'admin_notes',
+        'admin_remarks',
         'processed_by',
         'otp_code',
         'otp_expires_at',
@@ -195,7 +195,7 @@ class DocumentRequest extends Model
         $this->status = $newStatus;
         
         if ($notes) {
-            $this->admin_notes = $notes;
+            $this->admin_remarks = $notes;
         }
         
         if ($user) {

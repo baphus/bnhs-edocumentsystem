@@ -151,7 +151,7 @@ const bulkUpdate = () => {
         action: 'status_update',
         request_ids: selectedRequests,
         status: bulkStatus.value || undefined,
-        admin_notes: bulkNotes.value || undefined,
+        admin_remarks: bulkNotes.value || undefined,
     }, {
         onSuccess: () => {
             if (requestsTable.value) {

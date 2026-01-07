@@ -214,7 +214,7 @@ class RequestController extends Controller
             "request_ids" => ["required", "array"],
             "request_ids.*" => ["exists:document_requests,id"],
             "status" => ["required_if:action,status_update", Rule::in(["Pending", "Verified", "Processing", "Ready", "Completed", "Rejected"])],
-            "admin_notes" => ["nullable", "string"],
+            "admin_remarks" => ["nullable", "string"],
         ]);
 
         $requests = DocumentRequest::whereIn("id", $request->request_ids)->get();
@@ -239,7 +239,7 @@ class RequestController extends Controller
             case "status_update":
                 foreach ($requests as $req) {
                     $oldStatus = $req->status;
-                    $req->updateStatus($request->status, $request->user(), $request->admin_notes);
+                    $req->updateStatus($request->status, $request->user(), $request->admin_remarks);
                     
                     // Update completed_at if status is Completed
                     if ($request->status === "Completed" && !$req->completed_at) {
@@ -313,7 +313,7 @@ class RequestController extends Controller
                 "document_category" => $documentRequest->documentType->category ?? null,
                 "purpose" => $documentRequest->purpose,
                 "status" => $documentRequest->status,
-                "admin_notes" => $documentRequest->admin_notes,
+                "admin_remarks" => $documentRequest->admin_remarks,
                 "processed_by" => $documentRequest->processedBy?->name,
                 "created_at" => $documentRequest->created_at,
                 "updated_at" => $documentRequest->updated_at,
@@ -399,10 +399,10 @@ class RequestController extends Controller
     {
         $validated = $request->validate([
             "status" => ["required", Rule::in(["Pending", "Verified", "Processing", "Ready", "Completed", "Rejected"])],
-            "notes" => "nullable|string|max:1000",
+            "remarks" => "nullable|string|max:1000",
         ]);
 
-        $documentRequest->updateStatus($validated["status"], $request->user(), $validated["notes"] ?? null);
+        $documentRequest->updateStatus($validated["status"], $request->user(), $validated["remarks"] ?? null);
 
         if ($validated["status"] === "Completed" && !$documentRequest->completed_at) {
             $documentRequest->update(["completed_at" => now()]);
@@ -420,27 +420,27 @@ class RequestController extends Controller
     }
 
     /**
-     * Update admin notes.
+     * Update admin remarks.
      */
     public function updateNotes(Request $request, DocumentRequest $documentRequest)
     {
         $validated = $request->validate([
-            "admin_notes" => "nullable|string|max:2000",
+            "admin_remarks" => "nullable|string|max:2000",
         ]);
 
-        $oldNotes = $documentRequest->admin_notes;
-        $documentRequest->update(["admin_notes" => $validated["admin_notes"]]);
+        $oldRemarks = $documentRequest->admin_remarks;
+        $documentRequest->update(["admin_remarks" => $validated["admin_remarks"]]);
 
         RequestLog::create([
             "document_request_id" => $documentRequest->id,
             "user_id" => $request->user()->id,
-            "action" => "note_updated",
-            "old_value" => $oldNotes ? "Previous note" : null,
-            "new_value" => $validated["admin_notes"] ? "Note updated" : "Note cleared",
-            "description" => $validated["admin_notes"] ?: "Notes cleared",
+            "action" => "remark_updated",
+            "old_value" => $oldRemarks ? "Previous remark" : null,
+            "new_value" => $validated["admin_remarks"] ? "Remark updated" : "Remark cleared",
+            "description" => $validated["admin_remarks"] ?: "Remarks cleared",
         ]);
 
-        return back()->with("success", "Notes updated successfully.");
+        return back()->with("success", "Remarks updated successfully.");
     }
 
     /**

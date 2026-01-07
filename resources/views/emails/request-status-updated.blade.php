@@ -91,12 +91,12 @@
                                                 </td>
                                             </tr>
                                             @endif
-                                            @if($request->admin_notes)
+                                            @if($request->admin_remarks)
                                             <tr>
                                                 <td style="padding: 8px 0;">
-                                                    <strong style="color: #1a1a1a; font-size: 14px;">Admin Notes:</strong>
+                                                    <strong style="color: #1a1a1a; font-size: 14px;">Admin Remarks:</strong>
                                                     <div style="color: #4a4a4a; font-size: 14px; margin-top: 8px; padding: 10px; background-color: #ffffff; border-radius: 4px; line-height: 1.6;">
-                                                        {{ $request->admin_notes }}
+                                                        {{ $request->admin_remarks }}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -121,7 +121,7 @@
                                     @elseif($request->status === 'Completed')
                                         Your request has been completed. Thank you for using the BNHS eDocument System!
                                     @elseif($request->status === 'Rejected')
-                                        Unfortunately, your request has been rejected. Please check the admin notes above for more information or contact the registrar's office.
+                                        Unfortunately, your request has been rejected. Please check the admin remarks above for more information or contact the registrar's office.
                                     @else
                                         Your request status has been updated. Please check your dashboard for more details.
                                     @endif

@@ -90,7 +90,7 @@ return [
             'email' => false, // Email needed for queries
             'phone' => false, // Phone needed for communication
             'name' => false, // Name needed for display
-            'admin_notes' => true, // Encrypt sensitive admin notes
+            'admin_remarks' => true, // Encrypt sensitive admin remarks
         ],
     ],
 

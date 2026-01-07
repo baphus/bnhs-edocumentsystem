@@ -223,7 +223,7 @@ class RequestController extends Controller
                 "document_category" => $documentRequest->documentType->category ?? null,
                 "purpose" => $documentRequest->purpose,
                 "status" => $documentRequest->status,
-                "admin_notes" => $documentRequest->admin_notes,
+                "admin_remarks" => $documentRequest->admin_remarks,
                 "processed_by" => $documentRequest->processedBy?->name,
                 "created_at" => $documentRequest->created_at,
                 "updated_at" => $documentRequest->updated_at,
@@ -248,7 +248,7 @@ class RequestController extends Controller
     {
         $validated = $request->validate([
             "status" => ["required", Rule::in(["Pending", "Verified", "Processing", "Ready", "Completed", "Rejected"])],
-            "notes" => "nullable|string|max:1000",
+            "remarks" => "nullable|string|max:1000",
         ]);
 
         $oldStatus = $documentRequest->status;
@@ -256,7 +256,7 @@ class RequestController extends Controller
         $documentRequest->updateStatus(
             $validated["status"],
             $request->user(),
-            $validated["notes"] ?? null
+            $validated["remarks"] ?? null
         );
 
         // Update completed_at if status is Completed
@@ -280,28 +280,28 @@ class RequestController extends Controller
     }
 
     /**
-     * Update admin notes.
+     * Update admin remarks.
      */
     public function updateNotes(Request $request, DocumentRequest $documentRequest)
     {
         $validated = $request->validate([
-            "admin_notes" => "nullable|string|max:2000",
+            "admin_remarks" => "nullable|string|max:2000",
         ]);
 
-        $oldNotes = $documentRequest->admin_notes;
-        $documentRequest->update(["admin_notes" => $validated["admin_notes"]]);
+        $oldRemarks = $documentRequest->admin_remarks;
+        $documentRequest->update(["admin_remarks" => $validated["admin_remarks"]]);
 
         // Log the change
         $documentRequest->logs()->create([
             "document_request_id" => $documentRequest->id,
             "user_id" => $request->user()->id,
-            "action" => "note_updated",
-            "old_value" => $oldNotes ? "Previous note" : null,
-            "new_value" => $validated["admin_notes"] ? "Note updated" : "Note cleared",
-            "description" => $validated["admin_notes"] ?: "Notes cleared",
+            "action" => "remark_updated",
+            "old_value" => $oldRemarks ? "Previous remark" : null,
+            "new_value" => $validated["admin_remarks"] ? "Remark updated" : "Remark cleared",
+            "description" => $validated["admin_remarks"] ?: "Remarks cleared",
         ]);
 
-        return back()->with("success", "Notes updated successfully.");
+        return back()->with("success", "Remarks updated successfully.");
     }
 
     /**
@@ -395,12 +395,12 @@ class RequestController extends Controller
             "request_ids" => ["required", "array"],
             "request_ids.*" => ["exists:document_requests,id"],
             "status" => ["nullable", Rule::in(["Pending", "Verified", "Processing", "Ready", "Completed", "Rejected"])],
-            "admin_notes" => "nullable|string|max:2000",
+            "admin_remarks" => "nullable|string|max:2000",
         ]);
 
         // Ensure at least one field is provided
-        if (!$validated["status"] && !$validated["admin_notes"]) {
-            return back()->withErrors(["status" => "Please provide either a status or notes to update."]);
+        if (!$validated["status"] && !$validated["admin_remarks"]) {
+            return back()->withErrors(["status" => "Please provide either a status or remarks to update."]);
         }
 
         $requests = DocumentRequest::with('documentType')->whereIn("id", $validated["request_ids"])->get();
@@ -409,7 +409,7 @@ class RequestController extends Controller
 
         foreach ($requests as $req) {
             $oldStatus = $req->status;
-            $oldNotes = $req->admin_notes;
+            $oldRemarks = $req->admin_remarks;
 
             // Update status if provided
             if ($validated["status"]) {
@@ -433,18 +433,18 @@ class RequestController extends Controller
                 }
             }
 
-            // Update notes if provided
-            if (isset($validated["admin_notes"])) {
-                $req->update(["admin_notes" => $validated["admin_notes"]]);
+            // Update remarks if provided
+            if (isset($validated["admin_remarks"])) {
+                $req->update(["admin_remarks" => $validated["admin_remarks"]]);
 
                 // Log the change
                 $req->logs()->create([
                     "document_request_id" => $req->id,
                     "user_id" => $request->user()->id,
-                    "action" => "note_updated",
-                    "old_value" => $oldNotes ? "Previous note" : null,
-                    "new_value" => $validated["admin_notes"] ? "Note updated" : "Note cleared",
-                    "description" => $validated["admin_notes"] ?: "Notes cleared",
+                    "action" => "remark_updated",
+                    "old_value" => $oldRemarks ? "Previous remark" : null,
+                    "new_value" => $validated["admin_remarks"] ? "Remark updated" : "Remark cleared",
+                    "description" => $validated["admin_remarks"] ?: "Remarks cleared",
                 ]);
             }
 
@@ -456,8 +456,8 @@ class RequestController extends Controller
         if ($validated["status"]) {
             $messageParts[] = "status";
         }
-        if (isset($validated["admin_notes"])) {
-            $messageParts[] = "notes";
+        if (isset($validated["admin_remarks"])) {
+            $messageParts[] = "remarks";
         }
         $message = ucfirst(implode(" and ", $messageParts)) . " updated for " . $count . " request(s) successfully.";
 

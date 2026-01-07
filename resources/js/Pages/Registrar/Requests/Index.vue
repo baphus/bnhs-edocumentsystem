@@ -151,7 +151,7 @@ const bulkUpdate = () => {
     router.post(route('registrar.requests.bulk-update'), {
         request_ids: selectedRequests,
         status: bulkStatus.value || undefined,
-        admin_notes: bulkNotes.value || undefined,
+        admin_remarks: bulkNotes.value || undefined,
     }, {
         onSuccess: () => {
             if (requestsTable.value) {

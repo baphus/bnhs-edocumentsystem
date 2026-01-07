@@ -133,7 +133,7 @@ class UserDashboardController extends Controller
                     'completed_at' => $req->completed_at?->format('F d, Y h:i A'),
                     'created_at' => $req->created_at->format('F d, Y h:i A'),
                     'updated_at' => $req->updated_at->format('F d, Y h:i A'),
-                    'admin_notes' => $req->admin_notes,
+                    'admin_remarks' => $req->admin_remarks,
                     'activity_logs' => $req->logs->map(function ($log) {
                         return [
                             'id' => $log->id,

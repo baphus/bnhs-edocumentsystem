@@ -114,7 +114,7 @@ class DocumentRequestSeeder extends Seeder
                 'status' => $status,
                 'estimated_completion_date' => $estimatedCompletion,
                 'completed_at' => $completedAt,
-                'admin_notes' => $this->generateAdminNotes($status),
+                'admin_remarks' => $this->generateAdminRemarks($status),
                 'processed_by' => $processedBy,
                 'otp_verified' => rand(0, 1) ? true : false,
                 'signature' => rand(0, 1) ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' : null,
@@ -136,9 +136,9 @@ class DocumentRequestSeeder extends Seeder
     }
 
     /**
-     * Generate admin notes based on status
+     * Generate admin remarks based on status
      */
-    private function generateAdminNotes(string $status): ?string
+    private function generateAdminRemarks(string $status): ?string
     {
         $notes = [
             'Pending' => [

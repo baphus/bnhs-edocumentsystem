@@ -26,7 +26,7 @@ interface Request {
     completed_at?: string;
     created_at: string;
     updated_at: string;
-    admin_notes?: string;
+    admin_remarks?: string;
     activity_logs?: ActivityLog[];
 }
 
@@ -116,7 +116,7 @@ const isStepActive = (stepIndex: number, currentStatus: string) => {
 const formatActionName = (action: string) => {
     const actionMap: Record<string, string> = {
         'status_change': 'Status Updated',
-        'note_updated': 'Notes Updated',
+        'remark_updated': 'Remarks Updated',
         'request_created': 'Request Created',
         'request_submitted': 'Request Submitted',
     };
@@ -477,9 +477,9 @@ const getActionIcon = (action: string) => {
                                         <p class="text-sm text-gray-900">{{ latestRequest.purpose }}</p>
                                     </div>
 
-                                    <div v-if="latestRequest.admin_notes" class="bg-yellow-50 border border-yellow-200 rounded p-3">
-                                        <p class="text-xs font-semibold text-yellow-900 mb-1">Admin Notes</p>
-                                        <p class="text-sm text-yellow-900">{{ latestRequest.admin_notes }}</p>
+                                    <div v-if="latestRequest.admin_remarks" class="bg-yellow-50 border border-yellow-200 rounded p-3">
+                                        <p class="text-xs font-semibold text-yellow-900 mb-1">Admin Remarks</p>
+                                        <p class="text-sm text-yellow-900">{{ latestRequest.admin_remarks }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -548,9 +548,9 @@ const getActionIcon = (action: string) => {
                                         <p class="text-sm text-gray-900">{{ request.purpose }}</p>
                                     </div>
 
-                                    <div v-if="request.admin_notes" class="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3">
-                                        <p class="text-xs font-semibold text-yellow-900 mb-1">Admin Notes</p>
-                                        <p class="text-sm text-yellow-900">{{ request.admin_notes }}</p>
+                                    <div v-if="request.admin_remarks" class="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3">
+                                        <p class="text-xs font-semibold text-yellow-900 mb-1">Admin Remarks</p>
+                                        <p class="text-sm text-yellow-900">{{ request.admin_remarks }}</p>
                                     </div>
 
                                     <!-- Activity Timeline -->

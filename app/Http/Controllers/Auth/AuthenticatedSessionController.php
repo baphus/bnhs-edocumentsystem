@@ -38,8 +38,15 @@ class AuthenticatedSessionController extends Controller
             'last_login_at' => now(),
         ]);
 
-        // Redirect to the role-based dashboard router
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirect based on user role
+        $user = $request->user();
+        $defaultRoute = match ($user->role) {
+            'admin' => route('admin.dashboard', absolute: false),
+            'registrar' => route('registrar.dashboard', absolute: false),
+            default => route('home', absolute: false),
+        };
+
+        return redirect()->intended($defaultRoute);
     }
 
     /**
