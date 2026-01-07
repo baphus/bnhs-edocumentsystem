@@ -10,6 +10,7 @@ use App\Models\RequestLog;
 use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -253,7 +254,7 @@ class RequestController extends Controller
                     try {
                         Mail::to($req->email)->send(new RequestStatusUpdatedMail($req, $oldStatus));
                     } catch (\Exception $e) {
-                        \Log::error("Failed to send status update email for request " . $req->tracking_id . ": " . $e->getMessage());
+                        Log::error("Failed to send status update email for request " . $req->tracking_id . ": " . $e->getMessage());
                     }
                     
                     $count++;
@@ -413,7 +414,7 @@ class RequestController extends Controller
         try {
             Mail::to($documentRequest->email)->send(new RequestStatusUpdatedMail($documentRequest, $documentRequest->status));
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Failed to send status update email: " . $e->getMessage());
+            Log::error("Failed to send status update email: " . $e->getMessage());
         }
 
         return back()->with("success", "Request status updated successfully.");
