@@ -7,7 +7,9 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 const props = defineProps<{
     documentType: DocumentType;
     email: string;
-    trackStrands: Record<string, Record<string, string>>;
+    trackStrands?: Record<string, Record<string, string>>;
+    gradeLevels?: Record<string, string>;
+    schoolYears?: Record<string, string>;
 }>();
 
 const form = useForm({
@@ -31,6 +33,9 @@ const signatureCanvas = ref<HTMLCanvasElement | null>(null);
 const isDrawing = ref(false);
 const signatureError = ref('');
 let ctx: CanvasRenderingContext2D | null = null;
+
+// Extract trackStrands from props to a local reactive constant
+const trackStrands = computed(() => props.trackStrands || {});
 
 const setupCanvas = () => {
     const canvas = signatureCanvas.value;
