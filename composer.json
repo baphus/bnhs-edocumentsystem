@@ -71,9 +71,9 @@
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
         ],
         "post-install-cmd": [
-            "@php artisan optimize:clear || true",
-            "chmod -R 755 bootstrap/cache",
-            "chmod -R 755 storage"
+            "@php -r \"if (!getenv('RAILWAY_ENVIRONMENT') && !getenv('CI') && !getenv('NIXPACKS_BUILD')) { system('php artisan optimize:clear'); }\"",
+            "chmod -R 755 bootstrap/cache || true",
+            "chmod -R 755 storage || true"
         ],
         "compile": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",

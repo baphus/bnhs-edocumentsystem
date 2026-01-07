@@ -12,5 +12,8 @@ cmds = [
     "npm run build"
 ]
 
+[variables]
+CACHE_STORE = "file"
+
 [start]
 cmd = "bash railway-start.sh"
