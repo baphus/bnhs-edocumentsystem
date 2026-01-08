@@ -19,6 +19,7 @@ return [
         'exposed_headers' => ['X-Total-Count', 'X-Page-Count'],
         'max_age' => 3600,
         'supports_credentials' => true,
+        'Content-Security-Policy' => "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.bunny.net; font-src 'self' https://fonts.bunny.net;",
     ],
 
     /*
