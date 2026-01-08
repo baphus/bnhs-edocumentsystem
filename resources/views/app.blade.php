@@ -16,11 +16,11 @@
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.bunny.net; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net;">
         <!-- Scripts -->
         @routes
-        @vite(['resources/js/app.ts', "resources/js/Pages/{$page['component']}.vue"])
-        @inertiaHead
+        @inertiaHead @vite(['resources/js/app.ts', "resources/js/Pages/{$page['component']}.vue"])
+
     </head>
     <body class="font-sans antialiased">
         @inertia
