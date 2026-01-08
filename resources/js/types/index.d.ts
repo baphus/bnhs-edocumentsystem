@@ -109,11 +109,10 @@ export interface PaginatedData<T> {
     total: number;
 }
 
-export type PageProps<
-    T extends Record<string, unknown> = Record<string, unknown>,
-> = T & {
+export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     auth: {
         user: User;
     };
+    // This is the missing piece for TypeScript
     ziggy: Config & { location: string };
 };
