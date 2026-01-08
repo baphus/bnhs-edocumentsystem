@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.bunny.net; font-src 'self' https://fonts.bunny.net;">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.bunny.net; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net;">
+        <meta http-equiv="Content-Security-Policy" content="
+                default-src 'self'; 
+                script-src 'self' 'unsafe-inline' 'unsafe-eval'; 
+                style-src 'self' 'unsafe-inline' https://fonts.bunny.net; 
+                font-src 'self' https://fonts.bunny.net;
+            ">
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Favicons -->
@@ -21,8 +24,8 @@
 
         <!-- Scripts -->
         @routes
-        @inertiaHead @vite(['resources/js/app.ts', "resources/js/Pages/{$page['component']}.vue"])
-
+        @inertiaHead 
+        @vite(['resources/js/app.ts', "resources/js/Pages/{$page['component']}.vue"])
     </head>
     <body class="font-sans antialiased">
         @inertia
