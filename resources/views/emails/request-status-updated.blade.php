@@ -24,7 +24,7 @@
                                     <td align="center">
                                         <img src="{{ config('app.url') }}/images/logo.png" alt="BNHS Logo" style="height: 80px; width: auto; margin-bottom: 15px; display: block;" />
                                         <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">Bato National High School</h1>
-                                        <p style="margin: 5px 0 0 0; color: #e6ebf5; font-size: 14px;">eDocument System</p>
+                                        <p style="margin: 5px 0 0 0; color: #e6ebf5; font-size: 14px;">eDocument Request</p>
                                     </td>
                                 </tr>
                             </table>
@@ -119,7 +119,7 @@
                                     @elseif($request->status === 'Ready')
                                         Your document is ready for pickup! Please visit the registrar's office during office hours.
                                     @elseif($request->status === 'Completed')
-                                        Your request has been completed. Thank you for using the BNHS eDocument System!
+                                        Your request has been completed. Thank you for using the BNHS eDocument Request!
                                     @elseif($request->status === 'Rejected')
                                         Unfortunately, your request has been rejected. Please check the admin remarks above for more information or contact the registrar's office.
                                     @else
@@ -151,7 +151,7 @@
                                 Toledo City, Cebu
                             </p>
                             <p style="margin: 15px 0 0 0; color: #888888; font-size: 12px; line-height: 1.5;">
-                                This is an automated message from the BNHS eDocument System. Please do not reply to this email.
+                                This is an automated message from the BNHS eDocument Request. Please do not reply to this email.
                             </p>
                         </td>
                     </tr>

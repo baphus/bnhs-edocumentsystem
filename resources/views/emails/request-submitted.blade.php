@@ -24,7 +24,7 @@
                                     <td align="center">
                                         <img src="{{ config('app.url') }}/images/logo.png" alt="BNHS Logo" style="height: 80px; width: auto; margin-bottom: 15px; display: block;" />
                                         <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">Bato National High School</h1>
-                                        <p style="margin: 5px 0 0 0; color: #e6ebf5; font-size: 14px;">eDocument System</p>
+                                        <p style="margin: 5px 0 0 0; color: #e6ebf5; font-size: 14px;">eDocument Request</p>
                                     </td>
                                 </tr>
                             </table>
@@ -41,7 +41,7 @@
                             </p>
 
                             <p style="margin: 0 0 25px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                                Your document request has been successfully submitted to the BNHS eDocument System. We have received your request and will begin processing it shortly.
+                                Your document request has been successfully submitted to the BNHS eDocument Request. We have received your request and will begin processing it shortly.
                             </p>
 
                             <h3 style="margin: 30px 0 15px 0; color: #0038a8; font-size: 18px; font-weight: 600;">Request Details</h3>
@@ -133,7 +133,7 @@
                                 Toledo City, Cebu
                             </p>
                             <p style="margin: 15px 0 0 0; color: #888888; font-size: 12px; line-height: 1.5;">
-                                This is an automated message from the BNHS eDocument System. Please do not reply to this email.
+                                This is an automated message from the BNHS eDocument Request. Please do not reply to this email.
                             </p>
                         </td>
                     </tr>

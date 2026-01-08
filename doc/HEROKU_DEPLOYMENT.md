@@ -33,7 +33,7 @@ php artisan key:generate --show
 heroku config:set APP_KEY=base64:YOUR_GENERATED_KEY
 
 # Set other required variables
-heroku config:set APP_NAME="BNHS eDocument System"
+heroku config:set APP_NAME="BNHS eDocument Request"
 heroku config:set APP_ENV=production
 heroku config:set APP_DEBUG=false
 heroku config:set LOG_CHANNEL=stack
@@ -52,7 +52,7 @@ heroku config:set MAIL_USERNAME=your-email@gmail.com
 heroku config:set MAIL_PASSWORD=your-app-password
 heroku config:set MAIL_ENCRYPTION=tls
 heroku config:set MAIL_FROM_ADDRESS=your-email@gmail.com
-heroku config:set MAIL_FROM_NAME="BNHS eDocument System"
+heroku config:set MAIL_FROM_NAME="BNHS eDocument Request"
 ```
 
 ### 5. Configure Buildpacks

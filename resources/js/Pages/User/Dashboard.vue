@@ -170,7 +170,7 @@ const getActionIcon = (action: string) => {
                         <Link :href="route('home')" class="flex items-center gap-3">
                             <ApplicationLogo class="h-10 w-auto" />
                             <div>
-                                <p class="font-semibold text-gray-900">eDocument System</p>
+                                <p class="font-semibold text-gray-900">eDocument Request</p>
                                 <p class="text-xs text-gray-500">User Dashboard</p>
                             </div>
                         </Link>

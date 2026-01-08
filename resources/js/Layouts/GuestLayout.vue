@@ -13,7 +13,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
                 <h1 class="mt-3 text-xl font-semibold text-bnhs-blue">
                     Bato National High School
                 </h1>
-                <p class="text-sm text-gray-500">eDocument Request System</p>
+                <p class="text-sm text-gray-500">eDocument Request</p>
             </Link>
         </div>
 
@@ -25,7 +25,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 
         <div class="mt-6 text-center">
             <p class="text-xs text-gray-400">
-                &copy; {{ new Date().getFullYear() }} BNHS eDocument System
+                &copy; {{ new Date().getFullYear() }} BNHS eDocument Request
             </p>
             <Link :href="route('login')" class="mt-1 block text-[10px] text-gray-300 hover:text-gray-400 transition">
                 Admin

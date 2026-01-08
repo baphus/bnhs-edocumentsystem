@@ -1,5 +1,5 @@
 {
-  "name": "BNHS eDocument System",
+  "name": "BNHS eDocument Request",
   "description": "Document request management system for BNHS",
   "keywords": ["laravel", "php", "document-management"],
   "buildpacks": [
@@ -13,7 +13,7 @@
   "env": {
     "APP_NAME": {
       "description": "Application name",
-      "value": "BNHS eDocument System"
+      "value": "BNHS eDocument Request"
     },
     "APP_ENV": {
       "description": "Application environment",

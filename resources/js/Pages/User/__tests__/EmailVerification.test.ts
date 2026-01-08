@@ -69,7 +69,7 @@ describe('EmailVerification.vue', () => {
   it('renders the BNHS logo and navigation', () => {
     const wrapper = mount(EmailVerification);
     expect(wrapper.text()).toContain('BNHS');
-    expect(wrapper.text()).toContain('eDocument System');
+    expect(wrapper.text()).toContain('eDocument Request');
     expect(wrapper.text()).toContain('Back to Home');
   });
 });

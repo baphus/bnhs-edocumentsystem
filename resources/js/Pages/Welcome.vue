@@ -110,7 +110,7 @@ Please ensure all documents are complete before visiting the office.`
 </script>
 
 <template>
-    <Head title="BNHS eDocument System" />
+    <Head title="BNHS eDocument Request" />
     
     <div class="min-h-screen bg-white">
         <!-- Navigation -->
@@ -120,7 +120,7 @@ Please ensure all documents are complete before visiting the office.`
                     <div class="flex items-center gap-3">
                         <ApplicationLogo class="h-10 w-auto" />
                         <div class="hidden sm:block">
-                            <p class="text-sm font-semibold text-gray-900">eDocument System</p>
+                            <p class="text-sm font-semibold text-gray-900">eDocument Request</p>
                             <p class="text-xs text-gray-600">Bato National High School</p>
                         </div>
                     </div>
@@ -141,7 +141,7 @@ Please ensure all documents are complete before visiting the office.`
                     
                     <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
                         <span class="block">Bato National High School</span>
-                        <span class="block text-bnhs-blue">eDocument System</span>
+                        <span class="block text-bnhs-blue">eDocument Request</span>
                     </h1>
                     
                     <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
@@ -516,7 +516,7 @@ Please ensure all documents are complete before visiting the office.`
                     
                     <div class="text-center">
                         <p class="text-sm text-gray-600">
-                            &copy; {{ new Date().getFullYear() }} BNHS eDocument System. All rights reserved.
+                            &copy; {{ new Date().getFullYear() }} BNHS eDocument Request. All rights reserved.
                         </p>
                         <Link
                             v-if="canLogin"

@@ -138,7 +138,7 @@ const getStatusDescription = (status: string) => {
                 <div class="flex items-center justify-between">
                     <Link :href="route('home')" class="flex items-center gap-3">
                         <ApplicationLogo class="h-10 w-auto" />
-                        <span class="font-semibold text-gray-900">eDocument System</span>
+                        <span class="font-semibold text-gray-900">eDocument Request</span>
                     </Link>
                     <div class="flex gap-4">
                         <Link :href="route('track.index')" class="text-sm text-gray-600 hover:text-bnhs-blue">

@@ -101,7 +101,7 @@ onUnmounted(() => {
                     >
                         <ApplicationLogo class="h-10 w-auto shrink-0" />
                         <div v-if="!sidebarCollapsed" class="hidden lg:block">
-                            <p class="text-sm font-semibold text-bnhs-blue">eDocument System</p>
+                            <p class="text-sm font-semibold text-bnhs-blue">eDocument Request</p>
                             <p class="text-xs text-gray-500">Bato National High School</p>
                         </div>
                     </Link>
@@ -390,7 +390,7 @@ onUnmounted(() => {
             <footer class="border-t border-gray-200 bg-white py-4">
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <p class="text-center text-xs text-gray-500">
-                        &copy; {{ new Date().getFullYear() }} BNHS eDocument System - Bato National High School
+                        &copy; {{ new Date().getFullYear() }} BNHS eDocument Request - Bato National High School
                     </p>
                 </div>
             </footer>
