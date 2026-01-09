@@ -18,13 +18,13 @@ createInertiaApp({
             `./Pages/${name}.vue`,
             import.meta.glob<DefineComponent>('./Pages/**/*.vue'),
         ),
-    setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
-            .use(plugin)
-            // 2. Pass Ziggy as the second argument here, cast as any to fix type error
-            .use(ZiggyVue, Ziggy as any)
-            .mount(el);
-    },
+        setup({ el, App, props, plugin }) {
+            createApp({ render: () => h(App, props) })
+                .use(plugin)
+                // Use the global 'Ziggy' variable provided by the @routes directive
+                .use(ZiggyVue, (window as any).Ziggy) 
+                .mount(el);
+        },
     progress: {
         color: '#4B5563',
     },

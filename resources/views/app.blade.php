@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="Content-Security-Policy" content="style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com;">
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Favicons -->
@@ -19,7 +20,7 @@
         <!-- Scripts -->
         @routes
         @inertiaHead 
-        @vite(['resources/js/app.ts', "resources/js/Pages/{$page['component']}.vue"])
+        @vite(['resources/js/app.ts'])
     </head>
     <body class="font-sans antialiased">
         @inertia
