@@ -46,6 +46,6 @@
         "ziggy-js": "^2.6.0"
     },
     "engines": {
-      "node": "20.x"
+        "node": "20.x"
     }
 }
