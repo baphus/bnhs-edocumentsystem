@@ -1,18 +1,18 @@
 {
-  "_vendor-B5yKcEYV.js": {
-    "file": "assets/vendor-B5yKcEYV.js",
+  "_vendor-90DAykmA.js": {
+    "file": "assets/vendor-90DAykmA.js",
     "name": "vendor"
   },
   "resources/js/app.ts": {
-    "file": "assets/app-Cyrm0EkD.js",
+    "file": "assets/app-B7lJlb58.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
     "imports": [
-      "_vendor-B5yKcEYV.js"
+      "_vendor-90DAykmA.js"
     ],
     "css": [
-      "css/app-D3XdKA3t.css"
+      "css/app-gL_X-ZQ3.css"
     ]
   }
 }
