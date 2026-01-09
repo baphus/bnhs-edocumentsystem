@@ -182,10 +182,6 @@ Route::middleware(["auth", "role:admin"])->prefix("admin")->name("admin.")->grou
     Route::get("/export/requests", [ExportController::class, "requests"])->name("export.requests");
     Route::get("/export/users", [ExportController::class, "users"])->name("export.users");
     
-    // Trash/Restore
-    Route::get("/trash/requests", [TrashController::class, "requests"])->name("trash.requests");
-    Route::post("/trash/requests/{id}/restore", [TrashController::class, "restoreRequest"])->name("trash.requests.restore");
-    Route::delete("/trash/requests/{id}/force", [TrashController::class, "forceDeleteRequest"])->name("trash.requests.force");
 });
 
 // Profile routes (authenticated users)
