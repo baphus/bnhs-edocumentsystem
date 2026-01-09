@@ -3,9 +3,7 @@ import createServer from '@inertiajs/vue3/server';
 import { renderToString } from '@vue/server-renderer';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createSSRApp, DefineComponent, h } from 'vue';
-
-// 1. CHANGE THIS: Import from the package, not vendor
-import { ZiggyVue } from 'ziggy-js'; 
+import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -23,9 +21,8 @@ createServer((page) =>
             return createSSRApp({ render: () => h(App, props) })
                 .use(plugin)
                 .use(ZiggyVue, {
-                    // 2. USE props.ziggy (this is passed from HandleInertiaRequests.php)
-                    ...((props as any).ziggy),
-                    location: new URL((props as any).ziggy.location),
+                    ...page.props.ziggy,
+                    location: new URL(page.props.ziggy.location),
                 });
         },
     }),
