@@ -35,6 +35,7 @@ export default defineConfig({
                         if (id.includes('@headlessui') || id.includes('@heroicons')) {
                             return 'ui';
                         }
+                        // No Tailwind v4 plugins referenced
                         return 'vendor';
                     }
                 },
