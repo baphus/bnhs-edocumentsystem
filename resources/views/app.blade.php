@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta http-equiv="Content-Security-Policy" content="style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com;">
+        <meta http-equiv="Content-Security-Policy" content="style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com https://cdnjs.cloudflare.com;">
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Favicons -->
