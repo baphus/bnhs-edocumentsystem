@@ -21,8 +21,8 @@ createInertiaApp({
         setup({ el, App, props, plugin }) {
             createApp({ render: () => h(App, props) })
                 .use(plugin)
-                // Use the global 'Ziggy' variable provided by the @routes directive
-                .use(ZiggyVue, (window as any).Ziggy) 
+                // Change this line to use the Ziggy you imported at the top
+                .use(ZiggyVue, Ziggy) 
                 .mount(el);
         },
     progress: {
