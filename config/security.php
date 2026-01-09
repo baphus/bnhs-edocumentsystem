@@ -47,7 +47,12 @@ return [
         'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
 
         // Content-Security-Policy (CSP): Prevent XSS and injection attacks
-        'Content-Security-Policy' => "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.bunny.net; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; connect-src 'self'; frame-ancestors 'none'",
+        //
+        // Note: We explicitly allow `blob:` in script-src because modern bundlers
+        // (and some browser extensions) may generate blob: URLs for scripts.
+        // This keeps the policy reasonably strict while preventing runtime errors
+        // such as blocked blob-based scripts and Inertia/Vue bootstrap failures.
+        'Content-Security-Policy' => "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.bunny.net; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net; connect-src 'self'; frame-ancestors 'none'",
     ],
 
     /*

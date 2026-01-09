@@ -72,8 +72,7 @@
         ],
         "post-install-cmd": [
             "@php -r \"if (!getenv('RAILWAY_ENVIRONMENT') && !getenv('CI') && !getenv('NIXPACKS_BUILD') && !getenv('HEROKU')) { system('php artisan optimize:clear'); }\"",
-            "chmod -R 755 bootstrap/cache || true",
-            "chmod -R 755 storage || true"
+            "@php -r \"@chmod('bootstrap/cache', 0755); @chmod('storage', 0755);\""
         ],
         "compile": [
             "echo 'Build completed successfully'"

@@ -9,8 +9,6 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\RequestController as AdminRequestController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\SystemLogController;
-use App\Http\Controllers\Admin\TrashController;
-use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DocumentRequestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TrackingController;
