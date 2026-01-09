@@ -44,5 +44,8 @@
         "papaparse": "^5.5.3",
         "vue-chartjs": "^5.3.3",
         "ziggy-js": "^2.6.0"
+    },
+    "engines": {
+      "node": "20.x"
     }
 }
