@@ -1,5 +1,11 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use Inertia\Laravel\ServiceProvider as InertiaServiceProvider;
+use Tightenco\Ziggy\ZiggyServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
+    AppServiceProvider::class,
+    InertiaServiceProvider::class,
+    ZiggyServiceProvider::class,
 ];
