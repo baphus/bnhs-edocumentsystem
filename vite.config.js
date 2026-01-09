@@ -19,11 +19,15 @@ export default defineConfig({
     ],
 
     build: {
+        // Ensure Laravel can find Vite's manifest at public/build/manifest.json
+        outDir: 'public/build',
+        emptyOutDir: true,
+        manifest: 'manifest.json',
+
         // Production build optimization
         minify: 'terser',
         sourcemap: process.env.NODE_ENV === 'production' ? false : true,
         cssCodeSplit: true,
-            manifest: true,
         rollupOptions: {
             output: {
                 // Code splitting for better caching
