@@ -1,1 +1,0 @@
-import{_ as o}from"./_plugin-vue_export-helper-BCo6x5W8.js";import{f as r,t as s}from"./vendor-Cy1J3uaY.js";const t={src:"/images/logo.png",alt:"BNHS Logo",class:"w-auto"};const e=o({},[["render",function(o,e){return s(),r("img",t)}]]);export{e as A};

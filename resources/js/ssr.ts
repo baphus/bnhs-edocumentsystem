@@ -12,10 +12,11 @@ createServer((page) =>
         page,
         render: renderToString,
         title: (title) => `${title} - ${appName}`,
+        // Eagerly import all page components for SSR as well, so names always resolve.
         resolve: (name) =>
             resolvePageComponent(
                 `./Pages/${name}.vue`,
-                import.meta.glob<DefineComponent>('./Pages/**/*.vue'),
+                import.meta.glob<DefineComponent>('./Pages/**/*.vue', { eager: true }),
             ),
         setup({ App, props, plugin }) {
             return createSSRApp({ render: () => h(App, props) })
