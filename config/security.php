@@ -47,7 +47,7 @@ return [
         'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
 
         // Content-Security-Policy (CSP): Prevent XSS and injection attacks
-        'Content-Security-Policy' => "default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' fonts.gstatic.com; connect-src 'self' https://api.example.com; frame-ancestors 'none'",
+        'Content-Security-Policy' => "default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com fonts.bunny.net; img-src 'self' data: https:; font-src 'self' fonts.gstatic.com fonts.bunny.net; connect-src 'self' https://api.example.com; frame-ancestors 'none'",
     ],
 
     /*
