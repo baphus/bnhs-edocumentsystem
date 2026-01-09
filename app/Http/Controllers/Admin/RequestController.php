@@ -128,15 +128,8 @@ class RequestController extends Controller
      */
     public function create(): Response
     {
-        $documentTypes = DocumentType::all();
-        
-        return Inertia::render("Admin/Requests/Create", [
-            "documentTypes" => $documentTypes,
-            "gradeLevels" => $this->getGradeLevels(),
-            "trackStrands" => $this->getTrackStrands(),
-            "schoolYears" => $this->getSchoolYears(),
-            "statuses" => ["Pending", "Verified", "Processing", "Ready", "Completed", "Rejected"],
-        ]);
+        // Creation is handled via modal on the index page; redirect there.
+        return redirect()->route('admin.requests.index');
     }
 
     /**
